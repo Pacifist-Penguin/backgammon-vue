@@ -6,23 +6,39 @@
 	<button v-show="turnOf === null" @click="firstGameRoll">And the first turn will belong to:</button>
 	{{ turnOf }}
 	<h3 v-show="askedForRerroll && turnOf === null">Wow, rolls are equal, please try rerrolling</h3>
-	{{ indexOfSelectedDraught }}
+	{{ indexOfSelectedDraught }} {{ indexOfSelectedColumn }}
 	<div class="desk">
-		<div class="rowContainer" style="display: flex">
-			<div class="firstRow" style="display: flex">
+		<div class="rowContainer">
+			<div class="firstRow">
 				<span v-for="(draughtNumber, index) in firstRow" v-bind:key="index">
-					<draught-figure @selected="select" :indexOfColumnOnDesk="index" :draughtNumber="draughtNumber" />
+					<desk-column
+						:draughtNumber="draughtNumber"
+						:indexOfColumnOnDesk="index"
+						@selectedColumn="selectColumn"
+					>
+						<draught-figure
+							@selected="selectDraught"
+							:draughtNumber="draughtNumber"
+							:indexOfColumnOnDesk="index"
+						/>
+					</desk-column>
 				</span>
 			</div>
 		</div>
 		<div class="rowContainer">
-			<div class="secondRow" style="display: flex">
+			<div class="secondRow">
 				<span v-for="(draughtNumber, index) in secondRow" v-bind:key="index">
-					<draught-figure
-						@selected="select"
-						:indexOfColumnOnDesk="index + 12"
+					<desk-column
 						:draughtNumber="draughtNumber"
-					/>
+						:indexOfColumnOnDesk="index + 12"
+						@selectedColumn="selectColumn"
+					>
+						<draught-figure
+							@selected="selectDraught"
+							:draughtNumber="draughtNumber"
+							:indexOfColumnOnDesk="index + 12"
+						/>
+					</desk-column>
 				</span>
 			</div>
 		</div>
@@ -30,10 +46,12 @@
 </template>
 
 <script>
+import DeskColumn from "@/components/DeskColumn.vue";
 import DraughtFigure from "@/components/DraughtFigure.vue";
 export default {
 	name: "App",
 	components: {
+		DeskColumn,
 		DraughtFigure,
 	},
 	data() {
@@ -41,6 +59,7 @@ export default {
 			//contains position of all draughts
 			//upper-right corner -> upper left -> bottom left -> bottom right
 			//positive numbers represents light draughts, negative numbers represents dark
+			initialDesk: [2, 0, 0, 0, 0, -5, 0, -3, 0, 0, 0, 5, -5, 0, 0, 0, 3, 0, 5, 0, 0, 0, 0, -2],
 			desk: [2, 0, 0, 0, 0, -5, 0, -3, 0, 0, 0, 5, -5, 0, 0, 0, 3, 0, 5, 0, 0, 0, 0, -2],
 			turnOf: null, //true === light, false == darks
 			minRoll: 1,
@@ -49,9 +68,10 @@ export default {
 			turnsLeft: 0,
 			firstRoll: 0,
 			secondRoll: 0,
-			selected: false,
-			indexOfSelectedDraught: 0,
-			indexOfSelectedColumn: 0,
+			indexOfSelectedDraught: null,
+			indexOfSelectedColumn: null,
+			deadLights: 0,
+			deadDarks: 0,
 		};
 	},
 	computed: {
@@ -70,6 +90,32 @@ export default {
 		lightHome() {
 			return this.desk.slice(18, 24);
 		},
+		indexesOfAllLights() {
+			return this.desk.reduce((arr, el, index) => (el >= 1 && arr.push(index), arr), []);
+		},
+		indexesOfAllDarks() {
+			return this.desk.reduce((arr, el, index) => (el <= -1 && arr.push(index), arr), []);
+		},
+		indexesOfCurrentPlayer() {
+			return this.turnOf === true ? this.indexesOfAllLights : this.indexesOfAllDarks;
+		},
+		positionsAvailableForDark() {
+			return this.indexesOfAllDarks.reduce(
+				(arr, el, index) => ((el - this.firstRoll || el - this.secondRoll <= -1) && arr.push(index), arr),
+				[]
+			);
+		},
+		positionsAvailableForLights() {
+			return this.indexesOfAllLights.reduce(
+				(arr, el, index) => (
+					(this.desk[el + this.firstRoll] || this.desk[el + this.secondRoll] >= 1) && arr.push(index), arr
+				),
+				[]
+			);
+		},
+		positionsAvailableForCurrentPlayer() {
+			return this.turnOf === true ? this.positionsAvailableForLights : this.positionsAvailableForDark;
+		},
 		possibleToGetIn() {
 			return this.turnOf === true ? this.darkHome.some((el) => el >= -1) : this.lightHome.some((el) => el <= 1);
 		},
@@ -78,19 +124,28 @@ export default {
 				? this.darkHome.some((el) => el === this.fristRoll || this.secondRoll)
 				: this.lightHome.some((el) => el === this.firstRoll || this.secondRoll);
 		},
-		ifThereIsAvailablePositions() {
-			return this.turnOf === true
-				? this.desk[this.indexOfSelectedDraught + this.firstRoll] >= -1 ||
-						this.desk[this.indexOfSelectedDraught + this.secondRoll] >= -1
-				: this.desk[this.indexOfSelectedDraught - this.firstRoll] <= 1 ||
-						this.desk[this.indexOfSelectedDraught - this.secondRoll] <= 1;
+		firstTargetForLight() {
+			return this.desk[this.indexOfSelectedDraught + this.firstRoll];
 		},
-		ifColumnAvailable() {
+		secondTargetForLight() {
+			return this.desk[this.indexOfSelectedDraught + this.secondRoll];
+		},
+		firstTargetForDark() {
+			return this.desk[this.indexOfSelectedDraught - this.firstRoll];
+		},
+		secondTargetForDark() {
+			return this.desk[this.indexOfSelectedDraught - this.secondRoll];
+		},
+		ifPlayerNeedToEnter() {
+			return this.turnOf === true ? this.deadLights === 0 : this.deadDarks === 0;
+		},
+		ifThereIsAvailablePositionsForSelectedDraught() {
 			return this.turnOf === true
-				? this.desk[this.indexOfSelectedDraught + this.firstRoll] >= -1 ||
-						this.desk[this.indexOfSelectedDraught + this.secondRoll] >= -1
-				: this.desk[this.indexOfSelectedDraught - this.firstRoll] <= 1 ||
-						this.desk[this.indexOfSelectedDraught - this.secondRoll] <= 1;
+				? this.firstTargetForLight >= -1 || this.secondTargetForLight >= -1
+				: this.firstTargetForDark <= 1 || this.secondTargetForDark <= 1;
+		},
+		ifAnyPositionIsAvailable() {
+			return this.ifPlayerNeedToEnter === true ? this.possibleToGetIn : this.positionsAvailableForCurrentPlayer;
 		},
 	},
 	methods: {
@@ -98,17 +153,28 @@ export default {
 			return Math.floor(Math.random() * (this.maxRoll - this.minRoll) + 1);
 		},
 		begginingOfTheTurn() {
-			this.firstRoll = this.roll();
-			this.secondRoll = this.roll();
-			if (this.ifThereIsAvailablePositions) {
-				if (this.rollsAreEqual) {
-					this.turnsLeft = 4;
-				} else {
-					this.turnsLeft = 2;
-				}
-			} else {
+			if (!this.possibleToGetIn && this.ifPlayerNeedToEnter) {
 				this.theEndOfTurn();
+			} else {
+				this.firstRoll = this.roll();
+				this.secondRoll = this.roll();
+				if (this.ifThereIsAvailablePositions) {
+					if (this.rollsAreEqual) {
+						this.turnsLeft = 4;
+					} else {
+						this.turnsLeft = 2;
+					}
+				} else {
+					this.theEndOfTurn();
+				}
 			}
+		},
+		theEndOfTurn() {
+			this.selected = false;
+			this.turnsLeft = 0;
+			this.indexOfSelectedDraught = null;
+			this.indexOfSelectedColumn = null;
+			this.turnOf = !this.turnOf;
 		},
 		firstGameRoll() {
 			this.firstRoll = this.roll();
@@ -121,9 +187,15 @@ export default {
 				this.askedForRerroll = true;
 			}
 		},
-		select(target) {
+		selectDraught(target) {
 			this.indexOfSelectedDraught = target;
 			this.selected = true;
+		},
+		selectColumn(target) {
+			this.indexOfSelectedColumn = target;
+			if (this.ifColumnAvailable) {
+				this.moveDraught();
+			}
 		},
 		moveDraught() {
 			if (this.ifColumnAvailable) {
@@ -144,11 +216,6 @@ export default {
 				}
 				this.turnsLeft--;
 			}
-		},
-		theEndOfTurn() {
-			this.selected = false;
-			this.turnsLeft = 0;
-			this.turnOf = !this.turnOf;
 		},
 	},
 };

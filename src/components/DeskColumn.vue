@@ -1,16 +1,15 @@
 <template>
-	<ul :style="{ 'background-color: #0000FF': isPositive, 'background-color: #BF3EFF': !isPositive }" class="column">
+	<ul @click="selectColumn" :style="`background-color: ${computedStyle} `" class="column">
 		<li v-for="(draughts, index) in columnLength" :key="index">
-			<draught-figure :draughtNumber="draughtNumber" :indexOfColumnOnDesk="indexOfColumnOnDesk" />
+			<slot></slot>
 		</li>
 	</ul>
 </template>
 
 <script>
-import DraughtFigure from "@/components/DraughtFigure";
 export default {
-	components: {
-		DraughtFigure,
+	emits: {
+		selectedColumn: (value) => typeof value === "number",
 	},
 	props: {
 		draughtNumber: {
@@ -27,8 +26,14 @@ export default {
 		columnLength() {
 			return Math.abs(this.draughtNumber);
 		},
-		isPositive() {
-			return this.indexOfColumnOnDesk % 2 === 0;
+		computedStyle() {
+			return this.indexOfColumnOnDesk % 2 === 0 ? "#0000FF" : "#BF3EFF";
+		},
+	},
+	methods: {
+		selectColumn() {
+			this.$emit("selectedColumn", this.indexOfColumnOnDesk);
+			console.log("selected Column number:", this.indexOfColumnOnDesk);
 		},
 	},
 };
