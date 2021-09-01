@@ -19,12 +19,10 @@ export default {
 	props: {
 		draughtNumber: {
 			type: Number,
-			required: true,
 			default: 0,
 		},
 		indexOfColumnOnDesk: {
 			type: Number,
-			required: true,
 		},
 	},
 	computed: {
