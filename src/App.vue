@@ -42,6 +42,27 @@
 				</span>
 			</div>
 		</div>
+		<button @click="moveDraught">move draught</button>
+		<h1>Turns left: {{ turnsLeft }}</h1>
+	</div>
+	<div class="dead-figures">
+		<ul class="light-figures">
+			<draught-figure
+				v-for="(items, index) in deadLights"
+				:key="index"
+				@selected="selectDraught"
+				:draughtNumber="draughtNumber"
+				:indexOfColumnOnDesk="index"
+			/>
+		</ul>
+		<ul class="dark-figures">
+			<draught-figure
+				v-for="(items, index) in deadDarks"
+				:key="index"
+				:draughtNumber="-1"
+				:indexOfColumnOnDesk="index"
+			/>
+		</ul>
 	</div>
 </template>
 
@@ -65,7 +86,7 @@ export default {
 			minRoll: 1,
 			maxRoll: 6,
 			askedForRerroll: false,
-			turnsLeft: 0,
+			turnsLeft: 2,
 			firstRoll: 0,
 			secondRoll: 0,
 			indexOfSelectedDraught: null,
@@ -145,7 +166,9 @@ export default {
 				: this.firstTargetForDark <= 1 || this.secondTargetForDark <= 1;
 		},
 		ifAnyPositionIsAvailable() {
-			return this.ifPlayerNeedToEnter === true ? this.possibleToGetIn : this.positionsAvailableForCurrentPlayer;
+			return this.ifPlayerNeedToEnter === true
+				? this.possibleToGetIn
+				: this.positionsAvailableForCurrentPlayer.length > 0;
 		},
 	},
 	methods: {
@@ -153,12 +176,12 @@ export default {
 			return Math.floor(Math.random() * (this.maxRoll - this.minRoll) + 1);
 		},
 		begginingOfTheTurn() {
+			this.firstRoll = this.roll();
+			this.secondRoll = this.roll();
 			if (!this.possibleToGetIn && this.ifPlayerNeedToEnter) {
 				this.theEndOfTurn();
 			} else {
-				this.firstRoll = this.roll();
-				this.secondRoll = this.roll();
-				if (this.ifThereIsAvailablePositions) {
+				if (this.ifAnyPositionIsAvailable) {
 					if (this.rollsAreEqual) {
 						this.turnsLeft = 4;
 					} else {
@@ -170,7 +193,6 @@ export default {
 			}
 		},
 		theEndOfTurn() {
-			this.selected = false;
 			this.turnsLeft = 0;
 			this.indexOfSelectedDraught = null;
 			this.indexOfSelectedColumn = null;
@@ -185,11 +207,11 @@ export default {
 				this.turnOf = false; //first turn is the turn of darks
 			} else {
 				this.askedForRerroll = true;
+				return;
 			}
 		},
 		selectDraught(target) {
 			this.indexOfSelectedDraught = target;
-			this.selected = true;
 		},
 		selectColumn(target) {
 			this.indexOfSelectedColumn = target;
@@ -198,23 +220,37 @@ export default {
 			}
 		},
 		moveDraught() {
-			if (this.ifColumnAvailable) {
-				if (this.turnOf === true) {
-					if (this.desk[this.indexOfSelectedColumn] === -1) {
-						this.darksOutOfGame++;
-						this.desk[this.indexOfSelectedColumn]++;
-					}
-					this.desk[this.indexOfSelectedDraught]--;
+			if (this.turnOf === true) {
+				if (this.desk[this.indexOfSelectedColumn] === -1) {
+					this.deadDarks++;
 					this.desk[this.indexOfSelectedColumn]++;
-				} else {
-					if (this.desk[this.indexOfSelectedColumn] === 1) {
-						this.lightsOutOfGame++;
-						this.desk[this.indexOfSelectedColumn]--;
-					}
-					this.desk[this.indexOfSelectedDraught]++;
+				}
+				this.desk[this.indexOfSelectedDraught]--;
+				this.desk[this.indexOfSelectedColumn]++;
+			} else {
+				if (this.desk[this.indexOfSelectedColumn] === 1) {
+					this.deadLights++;
 					this.desk[this.indexOfSelectedColumn]--;
 				}
-				this.turnsLeft--;
+				this.desk[this.indexOfSelectedDraught]++;
+				this.desk[this.indexOfSelectedColumn]--;
+			}
+			this.turnsLeft--;
+		},
+	},
+	watch: {
+		ifAnyPositionIsAvailable: function () {
+			if (!this.ifAnyPositionIsAvailable) {
+				this.turnsLeft = 0;
+				this.indexOfSelectedDraught = null;
+				this.indexOfSelectedColumn = null;
+				this.turnOf = !this.turnOf;
+			}
+		},
+		turnsLeft: function () {
+			if (this.turnsLeft === 0) {
+				this.theEndOfTurn();
+				this.begginingOfTheTurn();
 			}
 		},
 	},
