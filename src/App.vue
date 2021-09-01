@@ -6,15 +6,26 @@
 	<button v-show="turnOf === null" @click="firstGameRoll">And the first turn will belong to:</button>
 	{{ turnOf }}
 	<h3 v-show="askedForRerroll && turnOf === null">Wow, rolls are equal, please try rerrolling</h3>
-	<div style="display: flex">
-		<span v-for="(position, index) in firstRow" v-bind:key="index">
-			<draught-figure :position="position" :color="'black'" :key="figures" />
-		</span>
-	</div>
-	<div style="display: flex">
-		<span v-for="(position, index) in secondRow" v-bind:key="index">
-			<draught-figure :position="position" :color="'black'" :key="figures" />
-		</span>
+	{{ indexOfSelectedDraught }}
+	<div class="desk">
+		<div class="rowContainer" style="display: flex">
+			<div class="firstRow" style="display: flex">
+				<span v-for="(draughtNumber, index) in firstRow" v-bind:key="index">
+					<draught-figure @selected="select" :indexOfColumnOnDesk="index" :draughtNumber="draughtNumber" />
+				</span>
+			</div>
+		</div>
+		<div class="rowContainer">
+			<div class="secondRow" style="display: flex">
+				<span v-for="(draughtNumber, index) in secondRow" v-bind:key="index">
+					<draught-figure
+						@selected="select"
+						:indexOfColumnOnDesk="index + 12"
+						:draughtNumber="draughtNumber"
+					/>
+				</span>
+			</div>
+		</div>
 	</div>
 </template>
 
@@ -29,7 +40,7 @@ export default {
 		return {
 			//contains position of all draughts
 			//upper-right corner -> upper left -> bottom left -> bottom right
-			//positive numbers are light draughts, negative numbers is dark
+			//positive numbers represents light draughts, negative numbers represents dark
 			desk: [2, 0, 0, 0, 0, -5, 0, -3, 0, 0, 0, 5, -5, 0, 0, 0, 3, 0, 5, 0, 0, 0, 0, -2],
 			turnOf: null, //true === light, false == darks
 			minRoll: 1,
@@ -45,7 +56,7 @@ export default {
 	},
 	computed: {
 		firstRow() {
-			return this.desk.slice(0, 12).reverse(); //it's reversed only for it to display properly
+			return this.desk.slice(0, 12); //it's reversed in CSS
 		},
 		secondRow() {
 			return this.desk.slice(12, 24);
@@ -68,6 +79,13 @@ export default {
 				: this.lightHome.some((el) => el === this.firstRoll || this.secondRoll);
 		},
 		ifThereIsAvailablePositions() {
+			return this.turnOf === true
+				? this.desk[this.indexOfSelectedDraught + this.firstRoll] >= -1 ||
+						this.desk[this.indexOfSelectedDraught + this.secondRoll] >= -1
+				: this.desk[this.indexOfSelectedDraught - this.firstRoll] <= 1 ||
+						this.desk[this.indexOfSelectedDraught - this.secondRoll] <= 1;
+		},
+		ifColumnAvailable() {
 			return this.turnOf === true
 				? this.desk[this.indexOfSelectedDraught + this.firstRoll] >= -1 ||
 						this.desk[this.indexOfSelectedDraught + this.secondRoll] >= -1
@@ -104,15 +122,23 @@ export default {
 			}
 		},
 		select(target) {
-			this.indexOfSelectedDraught = target.value;
+			this.indexOfSelectedDraught = target;
 			this.selected = true;
 		},
 		moveDraught() {
 			if (this.ifColumnAvailable) {
 				if (this.turnOf === true) {
+					if (this.desk[this.indexOfSelectedColumn] === -1) {
+						this.darksOutOfGame++;
+						this.desk[this.indexOfSelectedColumn]++;
+					}
 					this.desk[this.indexOfSelectedDraught]--;
 					this.desk[this.indexOfSelectedColumn]++;
 				} else {
+					if (this.desk[this.indexOfSelectedColumn] === 1) {
+						this.lightsOutOfGame++;
+						this.desk[this.indexOfSelectedColumn]--;
+					}
 					this.desk[this.indexOfSelectedDraught]++;
 					this.desk[this.indexOfSelectedColumn]--;
 				}
@@ -127,3 +153,18 @@ export default {
 	},
 };
 </script>
+
+<style scoped>
+.firstRow {
+	display: flex;
+	flex-direction: row-reverse;
+	height: 300px;
+}
+.secondRow {
+	display: flex;
+	height: 300px;
+}
+.rowContainer {
+	display: flex;
+}
+</style>
