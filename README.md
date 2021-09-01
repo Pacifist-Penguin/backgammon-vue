@@ -27,3 +27,7 @@ npm run lint
 ### Customize configuration
 
 See [Configuration Reference](https://cli.vuejs.org/config/).
+
+### Project specific
+
+I've decided not to use Vuex because it doesen't seem like it's necessary. Props-drilling are fine. Using slots in this situation would make App.vue too complicated.
