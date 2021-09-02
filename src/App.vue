@@ -7,7 +7,7 @@
 		</p>
 	</header>
 	<button v-show="turnOf === null" @click="firstGameRoll">And the first turn will belong to:</button>
-	{{ turnOf }}
+	<h1 v-show="turnOf != null">{{ turnOf ? "Lights" : "Darks" }}</h1>
 	<h3 v-show="askedForRerroll && turnOf === null">Wow, rolls are equal, please try rerrolling</h3>
 	{{ indexOfSelectedDraught }} {{ indexOfSelectedColumn }}
 	<div class="desk">
@@ -28,7 +28,6 @@
 				</span>
 			</div>
 		</div>
-		{{ firstRoll }} {{ secondRoll }}
 		<div class="rowContainer">
 			<div class="secondRow">
 				<span v-for="(draughtNumber, index) in secondRow" v-bind:key="index">
@@ -46,8 +45,8 @@
 				</span>
 			</div>
 		</div>
+		<h1>{{ firstRoll }} {{ secondRoll }}</h1>
 		<h1>Turns left: {{ turnsLeft }}</h1>
-		<h1>{{ ifColumnIsAvailable }}</h1>
 	</div>
 	<div class="dead-figures">
 		<ul class="light-figures">
@@ -93,8 +92,8 @@ export default {
 			maxRoll: 6,
 			askedForRerroll: false,
 			turnsLeft: 2,
-			firstRoll: 0,
-			secondRoll: 0,
+			firstRoll: null,
+			secondRoll: null,
 			indexOfSelectedDraught: null,
 			indexOfSelectedColumn: null,
 			deadLights: 0,
@@ -195,6 +194,9 @@ export default {
 		ifPlayerNeedToEnter() {
 			return this.ifTurnOfLight ? this.deadLights != 0 : this.deadDarks != 0;
 		},
+		ifPlayerAbleToExit() {
+			return this.ifTurnOfLight ? Math.min(this.indexesOfAllLights) >= 17 : Math.min(this.indexesOfAllDarks) <= 5;
+		},
 		ifThereIsAvailablePositionsForSelectedDraught() {
 			return this.ifTurnOfLight
 				? this.firstTargetForLight >= -1 || this.secondTargetForLight >= -1
@@ -256,6 +258,11 @@ export default {
 			if (this.ifColumnIsAvailable) {
 				this.moveDraught();
 			}
+			if (this.ifPlayerAbleToExit && this.indexOfSelectedColumn === this.indexOfSelectedDraught) {
+				this.ifTurnOfLight
+					? this.indexOfSelectedColumn-- && this.lightsOutOfGame++
+					: this.indexOfSelectedColumn++ && this.darksOutOfGame++;
+			}
 		},
 		moveDraught() {
 			if (this.ifTurnOfLight) {
@@ -298,6 +305,8 @@ export default {
 				this.theEndOfTurn();
 				this.begginingOfTheTurn();
 			}
+			this.indexOfSelectedDraught = null;
+			this.indexOfSelectedColumn = null; // resets selection between turns
 		},
 	},
 };
@@ -312,6 +321,10 @@ export default {
 .secondRow {
 	display: flex;
 	height: 300px;
+}
+.secondRow > * > * {
+	display: flex;
+	flex-direction: column-reverse;
 }
 .rowContainer {
 	display: flex;
