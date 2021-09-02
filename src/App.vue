@@ -1,8 +1,11 @@
 <template>
-	<h1>
-		Hi! It's game called "backgammon", widely popular on east. It's "short" version because i didn't like "long"
-		version.
-	</h1>
+	<header>
+		<h1>Backgammon</h1>
+		<p>
+			As you may guess, it's game called "backgammon". It's widely popular on east. It's "short" version because i
+			didn't like "long" version. Actually, long version is whole another game, and this game is really stupid
+		</p>
+	</header>
 	<button v-show="turnOf === null" @click="firstGameRoll">And the first turn will belong to:</button>
 	{{ turnOf }}
 	<h3 v-show="askedForRerroll && turnOf === null">Wow, rolls are equal, please try rerrolling</h3>
@@ -25,6 +28,7 @@
 				</span>
 			</div>
 		</div>
+		{{ firstRoll }} {{ secondRoll }}
 		<div class="rowContainer">
 			<div class="secondRow">
 				<span v-for="(draughtNumber, index) in secondRow" v-bind:key="index">
@@ -42,16 +46,16 @@
 				</span>
 			</div>
 		</div>
-		<button @click="moveDraught">move draught</button>
 		<h1>Turns left: {{ turnsLeft }}</h1>
+		<h1>{{ ifColumnIsAvailable }}</h1>
 	</div>
 	<div class="dead-figures">
 		<ul class="light-figures">
 			<draught-figure
 				v-for="(items, index) in deadLights"
 				:key="index"
-				@selected="selectDraught"
-				:draughtNumber="draughtNumber"
+				@selected="ressurection"
+				:draughtNumber="1"
 				:indexOfColumnOnDesk="index"
 			/>
 		</ul>
@@ -59,9 +63,11 @@
 			<draught-figure
 				v-for="(items, index) in deadDarks"
 				:key="index"
+				@selected="ressurection"
 				:draughtNumber="-1"
 				:indexOfColumnOnDesk="index"
 			/>
+			<!-- draughtNumber set only to make it proper color -->
 		</ul>
 	</div>
 </template>
@@ -111,6 +117,9 @@ export default {
 		lightHome() {
 			return this.desk.slice(18, 24);
 		},
+		ifTurnOfLight() {
+			return this.turnOf === true;
+		},
 		indexesOfAllLights() {
 			return this.desk.reduce((arr, el, index) => (el >= 1 && arr.push(index), arr), []);
 		},
@@ -118,30 +127,44 @@ export default {
 			return this.desk.reduce((arr, el, index) => (el <= -1 && arr.push(index), arr), []);
 		},
 		indexesOfCurrentPlayer() {
-			return this.turnOf === true ? this.indexesOfAllLights : this.indexesOfAllDarks;
+			return this.ifTurnOfLight
+				? this.indexesOfAllLights
+				: this.ifTurnOfLight === false
+				? this.indexesOfAllDarks
+				: null;
 		},
 		positionsAvailableForDark() {
-			return this.indexesOfAllDarks.reduce(
-				(arr, el, index) => ((el - this.firstRoll || el - this.secondRoll <= -1) && arr.push(index), arr),
-				[]
-			);
+			return [
+				...this.indexesOfAllDarks.reduce(
+					(arr, el) => (this.desk[el - this.firstRoll] <= 1 && arr.push(el - this.firstRoll), arr),
+					[]
+				),
+				...this.indexesOfAllDarks.reduce(
+					(arr, el) => (this.desk[el - this.secondRoll] <= 1 && arr.push(el - this.secondRoll), arr),
+					[]
+				),
+			];
 		},
 		positionsAvailableForLights() {
-			return this.indexesOfAllLights.reduce(
-				(arr, el, index) => (
-					(this.desk[el + this.firstRoll] || this.desk[el + this.secondRoll] >= 1) && arr.push(index), arr
+			return [
+				...this.indexesOfAllLights.reduce(
+					(arr, el) => (this.desk[el + this.firstRoll] >= -1 && arr.push(el - this.firstRoll), arr),
+					[]
 				),
-				[]
-			);
+				...this.indexesOfAllLights.reduce(
+					(arr, el) => (this.desk[el + this.secondRoll] >= -1 && arr.push(el - this.secondRoll), arr),
+					[]
+				),
+			];
 		},
 		positionsAvailableForCurrentPlayer() {
-			return this.turnOf === true ? this.positionsAvailableForLights : this.positionsAvailableForDark;
+			return this.ifTurnOfLight ? this.positionsAvailableForLights : this.positionsAvailableForDark;
 		},
 		possibleToGetIn() {
-			return this.turnOf === true ? this.darkHome.some((el) => el >= -1) : this.lightHome.some((el) => el <= 1);
+			return this.ifTurnOfLight ? this.darkHome.some((el) => el >= -1) : this.lightHome.some((el) => el <= 1);
 		},
 		canGetIn() {
-			return this.turnOf === true
+			return this.ifTurnOfLight
 				? this.darkHome.some((el) => el === this.fristRoll || this.secondRoll)
 				: this.lightHome.some((el) => el === this.firstRoll || this.secondRoll);
 		},
@@ -151,17 +174,29 @@ export default {
 		secondTargetForLight() {
 			return this.desk[this.indexOfSelectedDraught + this.secondRoll];
 		},
+		indexOfFirstTargetForLight() {
+			return this.indexOfSelectedDraught + this.firstRoll;
+		},
+		indexOfSecondTargetForLight() {
+			return this.indexOfSelectedDraught + this.secondRoll;
+		},
 		firstTargetForDark() {
 			return this.desk[this.indexOfSelectedDraught - this.firstRoll];
 		},
 		secondTargetForDark() {
 			return this.desk[this.indexOfSelectedDraught - this.secondRoll];
 		},
+		indexOfFirstTargetForDark() {
+			return this.indexOfSelectedDraught - this.firstRoll;
+		},
+		indexOfSecondTargetForDark() {
+			return this.indexOfSelectedDraught - this.secondRoll;
+		},
 		ifPlayerNeedToEnter() {
-			return this.turnOf === true ? this.deadLights === 0 : this.deadDarks === 0;
+			return this.ifTurnOfLight ? this.deadLights != 0 : this.deadDarks != 0;
 		},
 		ifThereIsAvailablePositionsForSelectedDraught() {
-			return this.turnOf === true
+			return this.ifTurnOfLight
 				? this.firstTargetForLight >= -1 || this.secondTargetForLight >= -1
 				: this.firstTargetForDark <= 1 || this.secondTargetForDark <= 1;
 		},
@@ -170,33 +205,17 @@ export default {
 				? this.possibleToGetIn
 				: this.positionsAvailableForCurrentPlayer.length > 0;
 		},
+		ifColumnIsAvailable() {
+			return this.ifTurnOfLight
+				? this.indexOfSelectedColumn === this.indexOfFirstTargetForLight ||
+						this.indexOfSelectedColumn === this.indexOfSecondTargetForLight
+				: this.indexOfSelectedColumn === this.indexOfFirstTargetForDark ||
+						this.indexOfSelectedColumn === this.indexOfSecondTargetForDark;
+		},
 	},
 	methods: {
 		roll() {
 			return Math.floor(Math.random() * (this.maxRoll - this.minRoll) + 1);
-		},
-		begginingOfTheTurn() {
-			this.firstRoll = this.roll();
-			this.secondRoll = this.roll();
-			if (!this.possibleToGetIn && this.ifPlayerNeedToEnter) {
-				this.theEndOfTurn();
-			} else {
-				if (this.ifAnyPositionIsAvailable) {
-					if (this.rollsAreEqual) {
-						this.turnsLeft = 4;
-					} else {
-						this.turnsLeft = 2;
-					}
-				} else {
-					this.theEndOfTurn();
-				}
-			}
-		},
-		theEndOfTurn() {
-			this.turnsLeft = 0;
-			this.indexOfSelectedDraught = null;
-			this.indexOfSelectedColumn = null;
-			this.turnOf = !this.turnOf;
 		},
 		firstGameRoll() {
 			this.firstRoll = this.roll();
@@ -210,17 +229,36 @@ export default {
 				return;
 			}
 		},
+		begginingOfTheTurn() {
+			this.firstRoll = this.roll();
+			this.secondRoll = this.roll();
+			if ((!this.possibleToGetIn && this.ifPlayerNeedToEnter) || !this.ifAnyPositionIsAvailable) {
+				this.theEndOfTurn();
+			} else {
+				if (this.rollsAreEqual) {
+					this.turnsLeft = 4;
+				} else {
+					this.turnsLeft = 2;
+				}
+			}
+		},
+		theEndOfTurn() {
+			this.turnsLeft = 0;
+			this.indexOfSelectedDraught = null;
+			this.indexOfSelectedColumn = null;
+			this.turnOf = !this.turnOf;
+		},
 		selectDraught(target) {
 			this.indexOfSelectedDraught = target;
 		},
 		selectColumn(target) {
 			this.indexOfSelectedColumn = target;
-			if (this.ifColumnAvailable) {
+			if (this.ifColumnIsAvailable) {
 				this.moveDraught();
 			}
 		},
 		moveDraught() {
-			if (this.turnOf === true) {
+			if (this.ifTurnOfLight) {
 				if (this.desk[this.indexOfSelectedColumn] === -1) {
 					this.deadDarks++;
 					this.desk[this.indexOfSelectedColumn]++;
@@ -237,14 +275,22 @@ export default {
 			}
 			this.turnsLeft--;
 		},
+		ressurect() {
+			if (this.ifTurnOfLight) {
+				this.deadLights--;
+				this.indexOfSelectedColumn++;
+			} else {
+				this.deadDarks--;
+				this.indexOfSelectedColumn--;
+			}
+			this.turnsLeft--;
+		},
 	},
 	watch: {
 		ifAnyPositionIsAvailable: function () {
 			if (!this.ifAnyPositionIsAvailable) {
-				this.turnsLeft = 0;
-				this.indexOfSelectedDraught = null;
-				this.indexOfSelectedColumn = null;
-				this.turnOf = !this.turnOf;
+				this.theEndOfTurn();
+				this.begginingOfTheTurn();
 			}
 		},
 		turnsLeft: function () {
