@@ -53,7 +53,6 @@
 			<draught-figure
 				v-for="(items, index) in deadLights"
 				:key="index"
-				@selected="ressurection"
 				:draughtNumber="1"
 				:indexOfColumnOnDesk="index"
 			/>
@@ -62,7 +61,6 @@
 			<draught-figure
 				v-for="(items, index) in deadDarks"
 				:key="index"
-				@selected="ressurection"
 				:draughtNumber="-1"
 				:indexOfColumnOnDesk="index"
 			/>
@@ -85,8 +83,9 @@ export default {
 			//contains position of all draughts
 			//upper-right corner -> upper left -> bottom left -> bottom right
 			//positive numbers represents light draughts, negative numbers represents dark
-			initialDesk: [2, 0, 0, 0, 0, -5, 0, -3, 0, 0, 0, 5, -5, 0, 0, 0, 3, 0, 5, 0, 0, 0, 0, -2],
-			desk: [2, 0, 0, 0, 0, -5, 0, -3, 0, 0, 0, 5, -5, 0, 0, 0, 3, 0, 5, 0, 0, 0, 0, -2],
+			//initialDesk: [2, 0, 0, 0, 0, -5, 0, -3, 0, 0, 0, 5, -5, 0, 0, 0, 3, 0, 5, 0, 0, 0, 0, -2],
+			//desk: [2, 0, 0, 0, 0, -5, 0, -3, 0, 0, 0, 5, -5, 0, 0, 0, 3, 0, 5, 0, 0, 0, 0, -2],
+			desk: [-2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2], //test desk
 			turnOf: null, //true === light, false == darks
 			minRoll: 1,
 			maxRoll: 6,
@@ -96,8 +95,8 @@ export default {
 			secondRoll: null,
 			indexOfSelectedDraught: null,
 			indexOfSelectedColumn: null,
-			deadLights: 0,
-			deadDarks: 0,
+			deadLights: 1,
+			deadDarks: 1,
 		};
 	},
 	computed: {
@@ -161,11 +160,11 @@ export default {
 		},
 		possibleToGetIn() {
 			return this.ifTurnOfLight ? this.darkHome.some((el) => el >= -1) : this.lightHome.some((el) => el <= 1);
-		},
+		}, //only needed if i want to let player roll
 		canGetIn() {
 			return this.ifTurnOfLight
-				? this.darkHome.some((el) => el === this.fristRoll || this.secondRoll)
-				: this.lightHome.some((el) => el === this.firstRoll || this.secondRoll);
+				? this.darkHome[this.firstRoll] >= -1 || this.darkHome[this.secondRoll] >= -1
+				: this.lightHome[this.firstRoll] <= 1 || this.lightHome[this.secondRoll] <= 1;
 		},
 		firstTargetForLight() {
 			return this.desk[this.indexOfSelectedDraught + this.firstRoll];
@@ -194,8 +193,8 @@ export default {
 		ifPlayerNeedToEnter() {
 			return this.ifTurnOfLight ? this.deadLights != 0 : this.deadDarks != 0;
 		},
-		ifPlayerAbleToExit() {
-			return this.ifTurnOfLight ? Math.min(this.indexesOfAllLights) >= 17 : Math.min(this.indexesOfAllDarks) <= 5;
+		ifPlayerStoredFiguresAtHome() {
+			return this.ifTurnOfLight ? Math.min(this.indexesOfAllLights) >= 17 : Math.max(this.indexesOfAllDarks) <= 5;
 		},
 		ifThereIsAvailablePositionsForSelectedDraught() {
 			return this.ifTurnOfLight
@@ -213,6 +212,13 @@ export default {
 						this.indexOfSelectedColumn === this.indexOfSecondTargetForLight
 				: this.indexOfSelectedColumn === this.indexOfFirstTargetForDark ||
 						this.indexOfSelectedColumn === this.indexOfSecondTargetForDark;
+		},
+		ifPlayerIsAbleToExit() {
+			return this.ifTurnOfLight
+				? Math.abs(this.indexOfSelectedDraught - 24) <= this.firstRoll ||
+						Math.abs(this.indexOfSelectedDraught - 24) <= this.secondRoll
+				: this.indexOfSelectedDraught + 1 <= this.firstRoll || //+1 because minRoll is 1 and array starts with 0
+						this.indexOfSelectedDraught + 1 <= this.secondRoll;
 		},
 	},
 	methods: {
@@ -258,10 +264,17 @@ export default {
 			if (this.ifColumnIsAvailable) {
 				this.moveDraught();
 			}
-			if (this.ifPlayerAbleToExit && this.indexOfSelectedColumn === this.indexOfSelectedDraught) {
+			if (
+				this.ifPlayerStoredFiguresAtHome &&
+				this.indexOfSelectedColumn === this.indexOfSelectedDraught &&
+				this.ifPlayerIsAbleToExit
+			) {
 				this.ifTurnOfLight
-					? this.indexOfSelectedColumn-- && this.lightsOutOfGame++
-					: this.indexOfSelectedColumn++ && this.darksOutOfGame++;
+					? this.desk[this.indexOfSelectedColumn]-- && this.lightsOutOfGame++
+					: this.desk[this.indexOfSelectedColumn]++ && this.darksOutOfGame++;
+			}
+			if (this.ifPlayerNeedToEnter && this.canGetIn) {
+				this.ressurect();
 			}
 		},
 		moveDraught() {
@@ -284,13 +297,24 @@ export default {
 		},
 		ressurect() {
 			if (this.ifTurnOfLight) {
-				this.deadLights--;
-				this.indexOfSelectedColumn++;
+				if (
+					this.desk[this.firstRoll - 1] === this.indexOfSelectedColumn ||
+					this.desk[this.secondRoll - 1] === this.indexOfSelectedColumn
+				) {
+					this.deadLights--;
+					this.desk[this.indexOfSelectedColumn]++;
+					this.turnsLeft--;
+				}
 			} else {
-				this.deadDarks--;
-				this.indexOfSelectedColumn--;
+				if (
+					this.desk[Math.abs(this.firstRoll - 23)] === this.indexOfSelectedColumn ||
+					this.desk[Math.abs(this.secondRoll - 23)] === this.indexOfSelectedColumn
+				) {
+					this.deadDarks--;
+					this.desk[this.indexOfSelectedColumn]--;
+					this.turnsLeft--;
+				}
 			}
-			this.turnsLeft--;
 		},
 	},
 	watch: {
@@ -305,8 +329,6 @@ export default {
 				this.theEndOfTurn();
 				this.begginingOfTheTurn();
 			}
-			this.indexOfSelectedDraught = null;
-			this.indexOfSelectedColumn = null; // resets selection between turns
 		},
 	},
 };

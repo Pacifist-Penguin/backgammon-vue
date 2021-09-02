@@ -1,9 +1,9 @@
 <template>
-	<ul @click="selectColumn" :style="`background-color: ${computedStyle} `" class="column">
-		<li v-for="(draughts, index) in columnLength" :key="index">
+	<div @click="selectColumn" :style="`background-color: ${computedStyle} `" class="column">
+		<div v-for="(draughts, index) in columnLength" :key="index">
 			<slot></slot>
-		</li>
-	</ul>
+		</div>
+	</div>
 </template>
 
 <script>
