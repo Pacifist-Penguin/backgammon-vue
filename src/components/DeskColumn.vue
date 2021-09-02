@@ -42,7 +42,9 @@ export default {
 <style scoped>
 .column {
 	display: block;
-	height: 50px;
+	height: 100%;
 	list-style: none;
+	margin: 0;
+	width: 50px;
 }
 </style>

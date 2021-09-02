@@ -1,7 +1,7 @@
 <template>
 	<svg
 		@click.stop="selectDraught"
-		style="width: 10px"
+		style="width: 25px"
 		viewBox="0 0 120 120"
 		version="1.1"
 		xmlns="http://www.w3.org/2000/svg"
