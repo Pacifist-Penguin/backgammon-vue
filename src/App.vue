@@ -76,16 +76,14 @@ export default {
 	name: "App",
 	components: {
 		DeskColumn,
-		DraughtFigure,
+		DraughtFigure
 	},
 	data() {
 		return {
 			//contains position of all draughts
 			//upper-right corner -> upper left -> bottom left -> bottom right
 			//positive numbers represents light draughts, negative numbers represents dark
-			//initialDesk: [2, 0, 0, 0, 0, -5, 0, -3, 0, 0, 0, 5, -5, 0, 0, 0, 3, 0, 5, 0, 0, 0, 0, -2],
-			//desk: [2, 0, 0, 0, 0, -5, 0, -3, 0, 0, 0, 5, -5, 0, 0, 0, 3, 0, 5, 0, 0, 0, 0, -2],
-			desk: [-2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2], //test desk
+			desk: [2, 0, 0, 0, 0, -5, 0, -3, 0, 0, 0, 5, -5, 0, 0, 0, 3, 0, 5, 0, 0, 0, 0, -2],
 			turnOf: null, //true === light, false == darks
 			minRoll: 1,
 			maxRoll: 6,
@@ -95,8 +93,8 @@ export default {
 			secondRoll: null,
 			indexOfSelectedDraught: null,
 			indexOfSelectedColumn: null,
-			deadLights: 1,
-			deadDarks: 1,
+			deadLights: 0,
+			deadDarks: 0
 		};
 	},
 	computed: {
@@ -105,9 +103,6 @@ export default {
 		},
 		secondRow() {
 			return this.desk.slice(12, 24);
-		},
-		rollsAreEqual() {
-			return this.firstRoll === this.secondRoll;
 		},
 		darkHome() {
 			return this.desk.slice(0, 6);
@@ -140,7 +135,7 @@ export default {
 				...this.indexesOfAllDarks.reduce(
 					(arr, el) => (this.desk[el - this.secondRoll] <= 1 && arr.push(el - this.secondRoll), arr),
 					[]
-				),
+				)
 			];
 		},
 		positionsAvailableForLights() {
@@ -152,7 +147,7 @@ export default {
 				...this.indexesOfAllLights.reduce(
 					(arr, el) => (this.desk[el + this.secondRoll] >= -1 && arr.push(el - this.secondRoll), arr),
 					[]
-				),
+				)
 			];
 		},
 		positionsAvailableForCurrentPlayer() {
@@ -160,66 +155,7 @@ export default {
 		},
 		possibleToGetIn() {
 			return this.ifTurnOfLight ? this.darkHome.some((el) => el >= -1) : this.lightHome.some((el) => el <= 1);
-		}, //only needed if i want to let player roll
-		canGetIn() {
-			return this.ifTurnOfLight
-				? this.darkHome[this.firstRoll] >= -1 || this.darkHome[this.secondRoll] >= -1
-				: this.lightHome[this.firstRoll] <= 1 || this.lightHome[this.secondRoll] <= 1;
-		},
-		firstTargetForLight() {
-			return this.desk[this.indexOfSelectedDraught + this.firstRoll];
-		},
-		secondTargetForLight() {
-			return this.desk[this.indexOfSelectedDraught + this.secondRoll];
-		},
-		indexOfFirstTargetForLight() {
-			return this.indexOfSelectedDraught + this.firstRoll;
-		},
-		indexOfSecondTargetForLight() {
-			return this.indexOfSelectedDraught + this.secondRoll;
-		},
-		firstTargetForDark() {
-			return this.desk[this.indexOfSelectedDraught - this.firstRoll];
-		},
-		secondTargetForDark() {
-			return this.desk[this.indexOfSelectedDraught - this.secondRoll];
-		},
-		indexOfFirstTargetForDark() {
-			return this.indexOfSelectedDraught - this.firstRoll;
-		},
-		indexOfSecondTargetForDark() {
-			return this.indexOfSelectedDraught - this.secondRoll;
-		},
-		ifPlayerNeedToEnter() {
-			return this.ifTurnOfLight ? this.deadLights != 0 : this.deadDarks != 0;
-		},
-		ifPlayerStoredFiguresAtHome() {
-			return this.ifTurnOfLight ? Math.min(this.indexesOfAllLights) >= 17 : Math.max(this.indexesOfAllDarks) <= 5;
-		},
-		ifThereIsAvailablePositionsForSelectedDraught() {
-			return this.ifTurnOfLight
-				? this.firstTargetForLight >= -1 || this.secondTargetForLight >= -1
-				: this.firstTargetForDark <= 1 || this.secondTargetForDark <= 1;
-		},
-		ifAnyPositionIsAvailable() {
-			return this.ifPlayerNeedToEnter === true
-				? this.possibleToGetIn
-				: this.positionsAvailableForCurrentPlayer.length > 0;
-		},
-		ifColumnIsAvailable() {
-			return this.ifTurnOfLight
-				? this.indexOfSelectedColumn === this.indexOfFirstTargetForLight ||
-						this.indexOfSelectedColumn === this.indexOfSecondTargetForLight
-				: this.indexOfSelectedColumn === this.indexOfFirstTargetForDark ||
-						this.indexOfSelectedColumn === this.indexOfSecondTargetForDark;
-		},
-		ifPlayerIsAbleToExit() {
-			return this.ifTurnOfLight
-				? Math.abs(this.indexOfSelectedDraught - 24) <= this.firstRoll ||
-						Math.abs(this.indexOfSelectedDraught - 24) <= this.secondRoll
-				: this.indexOfSelectedDraught + 1 <= this.firstRoll || //+1 because minRoll is 1 and array starts with 0
-						this.indexOfSelectedDraught + 1 <= this.secondRoll;
-		},
+		} //only needed if i want to let player roll
 	},
 	methods: {
 		roll() {
@@ -261,21 +197,6 @@ export default {
 		},
 		selectColumn(target) {
 			this.indexOfSelectedColumn = target;
-			if (this.ifColumnIsAvailable) {
-				this.moveDraught();
-			}
-			if (
-				this.ifPlayerStoredFiguresAtHome &&
-				this.indexOfSelectedColumn === this.indexOfSelectedDraught &&
-				this.ifPlayerIsAbleToExit
-			) {
-				this.ifTurnOfLight
-					? this.desk[this.indexOfSelectedColumn]-- && this.lightsOutOfGame++
-					: this.desk[this.indexOfSelectedColumn]++ && this.darksOutOfGame++;
-			}
-			if (this.ifPlayerNeedToEnter && this.canGetIn) {
-				this.ressurect();
-			}
 		},
 		moveDraught() {
 			if (this.ifTurnOfLight) {
@@ -294,28 +215,7 @@ export default {
 				this.desk[this.indexOfSelectedColumn]--;
 			}
 			this.turnsLeft--;
-		},
-		ressurect() {
-			if (this.ifTurnOfLight) {
-				if (
-					this.desk[this.firstRoll - 1] === this.indexOfSelectedColumn ||
-					this.desk[this.secondRoll - 1] === this.indexOfSelectedColumn
-				) {
-					this.deadLights--;
-					this.desk[this.indexOfSelectedColumn]++;
-					this.turnsLeft--;
-				}
-			} else {
-				if (
-					this.desk[Math.abs(this.firstRoll - 23)] === this.indexOfSelectedColumn ||
-					this.desk[Math.abs(this.secondRoll - 23)] === this.indexOfSelectedColumn
-				) {
-					this.deadDarks--;
-					this.desk[this.indexOfSelectedColumn]--;
-					this.turnsLeft--;
-				}
-			}
-		},
+		}
 	},
 	watch: {
 		ifAnyPositionIsAvailable: function () {
@@ -329,8 +229,8 @@ export default {
 				this.theEndOfTurn();
 				this.begginingOfTheTurn();
 			}
-		},
-	},
+		}
+	}
 };
 </script>
 
