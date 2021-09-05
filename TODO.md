@@ -1,7 +1,3 @@
-* Logic of entering home for dead figure
-* Modal with rules
-* Local ladder with nicknames
-* Selected Column & selected figures highlighting
-* Getting out of home shouldnt be made with "selectColumn()" method. REFACTOR NEEDED!!!!
-* With this being said, REFACTOR NOW!
-* Redisign (least priority)
+* Literally everything
+* Determine if u can step on some coordinate dependant on computed, before even clicked
+* REMAKE ROLL SO NEGATIVE ROLL GENERATED IF IT'S DARK TURN AND VICEVERSA
