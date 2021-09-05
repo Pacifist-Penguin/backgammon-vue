@@ -14,27 +14,27 @@
 export default {
 	name: "draught",
 	emits: {
-		selected: (value) => typeof value === "number",
+		selected: (value) => typeof value === "number"
 	},
 	props: {
 		draughtNumber: {
 			type: Number,
-			default: 0,
+			default: 0
 		},
 		indexOfColumnOnDesk: {
-			type: Number,
-		},
+			type: Number
+		}
 	},
 	computed: {
 		draughtColor() {
 			return this.draughtNumber > 0 ? "red" : "black";
-		},
+		}
 	},
 	methods: {
 		selectDraught() {
 			this.$emit("selected", this.indexOfColumnOnDesk);
 			console.log("selected figure number:", this.indexOfColumnOnDesk);
-		},
-	},
+		}
+	}
 };
 </script>

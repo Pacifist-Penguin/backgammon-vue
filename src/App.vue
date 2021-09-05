@@ -89,8 +89,16 @@ export default {
 			maxRoll: 6,
 			askedForRerroll: false,
 			turnsLeft: 2,
-			firstRoll: null,
-			secondRoll: null,
+			rolls: [
+				{
+					value: 1,
+					used: false
+				},
+				{
+					value: 1,
+					used: false
+				}
+			],
 			indexOfSelectedDraught: null,
 			indexOfSelectedColumn: null,
 			deadLights: 0,
@@ -141,25 +149,46 @@ export default {
 		positionsAvailableForLights() {
 			return [
 				...this.indexesOfAllLights.reduce(
-					(arr, el) => (this.desk[el + this.firstRoll] >= -1 && arr.push(el - this.firstRoll), arr),
+					(arr, el) => (this.desk[el + this.firstRoll] >= -1 && arr.push(el + this.firstRoll), arr),
 					[]
 				),
 				...this.indexesOfAllLights.reduce(
-					(arr, el) => (this.desk[el + this.secondRoll] >= -1 && arr.push(el - this.secondRoll), arr),
+					(arr, el) => (this.desk[el + this.secondRoll] >= -1 && arr.push(el + this.secondRoll), arr),
 					[]
 				)
 			];
 		},
+		positionsAvialableForLightsNew() {
+			const positions = [];
+			for (let index = 0; index < this.rolls.length; index++) {
+				const roll = this.rolls[index];
+				this.indexesOfAllLights.forEach((positionOfCurrentElement) => {
+					if (this.desk[positionOfCurrentElement + roll] >= -1) {
+						positions.push(positionOfCurrentElement + roll);
+					}
+				});
+			}
+			return positions;
+		},
 		positionsAvailableForCurrentPlayer() {
 			return this.ifTurnOfLight ? this.positionsAvailableForLights : this.positionsAvailableForDark;
 		},
+		positionsAvailableForSelectedDraught() {
+			return this.ifTurnOfLight
+				? [this.indexOfSelectedDraught + this.firstRoll, this.indexOfSelectedDraught + this.secondRoll]
+				: [this.indexOfSelectedDraught - this.firstRoll, this.indexOfSelectedDraught - this.secondRoll];
+		},
 		possibleToGetIn() {
 			return this.ifTurnOfLight ? this.darkHome.some((el) => el >= -1) : this.lightHome.some((el) => el <= 1);
-		} //only needed if i want to let player roll
+		}
 	},
 	methods: {
 		roll() {
-			return Math.floor(Math.random() * (this.maxRoll - this.minRoll) + 1);
+			if (this.ifTurnOLight) {
+				return Math.floor(Math.random() * (this.maxRoll - this.minRoll) + 1);
+			} else {
+				return -Math.abs(Math.floor(Math.random() * (this.maxRoll - this.minRoll) + 1));
+			}
 		},
 		firstGameRoll() {
 			this.firstRoll = this.roll();

@@ -9,18 +9,18 @@
 <script>
 export default {
 	emits: {
-		selectedColumn: (value) => typeof value === "number",
+		selectedColumn: (value) => typeof value === "number"
 	},
 	props: {
 		draughtNumber: {
 			type: Number,
 			required: true,
-			default: 0,
+			default: 0
 		},
 		indexOfColumnOnDesk: {
 			type: Number,
-			required: true,
-		},
+			required: true
+		}
 	},
 	computed: {
 		columnLength() {
@@ -28,14 +28,14 @@ export default {
 		},
 		computedStyle() {
 			return this.indexOfColumnOnDesk % 2 === 0 ? "#0000FF" : "#BF3EFF";
-		},
+		}
 	},
 	methods: {
 		selectColumn() {
 			this.$emit("selectedColumn", this.indexOfColumnOnDesk);
 			console.log("selected Column number:", this.indexOfColumnOnDesk);
-		},
-	},
+		}
+	}
 };
 </script>
 
