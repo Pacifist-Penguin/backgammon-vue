@@ -45,8 +45,10 @@
 				</span>
 			</div>
 		</div>
-		<h1>{{ firstRoll }} {{ secondRoll }}</h1>
-		<h1>Turns left: {{ turnsLeft }}</h1>
+		<h1>
+			<span v-for="(items, index) in leftTurns" :key="index">{{ leftTurns[index].value }}</span>
+		</h1>
+		<h1>Turns left: {{ leftTurns.length }}</h1>
 	</div>
 	<div class="dead-figures">
 		<ul class="light-figures">
@@ -84,11 +86,10 @@ export default {
 			//upper-right corner -> upper left -> bottom left -> bottom right
 			//positive numbers represents light draughts, negative numbers represents dark
 			desk: [2, 0, 0, 0, 0, -5, 0, -3, 0, 0, 0, 5, -5, 0, 0, 0, 3, 0, 5, 0, 0, 0, 0, -2],
-			turnOf: null, //true === light, false == darks
+			turnOf: null, //true === light, false === darks
 			minRoll: 1,
 			maxRoll: 6,
 			askedForRerroll: false,
-			turnsLeft: 2,
 			rolls: [
 				{
 					value: 1,
@@ -102,7 +103,9 @@ export default {
 			indexOfSelectedDraught: null,
 			indexOfSelectedColumn: null,
 			deadLights: 0,
-			deadDarks: 0
+			deadDarks: 0,
+			lightsOut: 0,
+			darksOut: 0
 		};
 	},
 	computed: {
@@ -135,33 +138,21 @@ export default {
 				: null;
 		},
 		positionsAvailableForDark() {
-			return [
-				...this.indexesOfAllDarks.reduce(
-					(arr, el) => (this.desk[el - this.firstRoll] <= 1 && arr.push(el - this.firstRoll), arr),
-					[]
-				),
-				...this.indexesOfAllDarks.reduce(
-					(arr, el) => (this.desk[el - this.secondRoll] <= 1 && arr.push(el - this.secondRoll), arr),
-					[]
-				)
-			];
+			const positions = [];
+			for (let index = 0; index < this.leftTurns.length; index++) {
+				const roll = this.leftTurns[index];
+				this.indexesOfAllLights.forEach((positionOfCurrentElement) => {
+					if (this.desk[positionOfCurrentElement + roll] <= 1) {
+						positions.push(positionOfCurrentElement + roll);
+					}
+				});
+			}
+			return positions;
 		},
 		positionsAvailableForLights() {
-			return [
-				...this.indexesOfAllLights.reduce(
-					(arr, el) => (this.desk[el + this.firstRoll] >= -1 && arr.push(el + this.firstRoll), arr),
-					[]
-				),
-				...this.indexesOfAllLights.reduce(
-					(arr, el) => (this.desk[el + this.secondRoll] >= -1 && arr.push(el + this.secondRoll), arr),
-					[]
-				)
-			];
-		},
-		positionsAvialableForLightsNew() {
 			const positions = [];
-			for (let index = 0; index < this.rolls.length; index++) {
-				const roll = this.rolls[index];
+			for (let index = 0; index < this.leftTurns.length; index++) {
+				const roll = this.leftTurns[index];
 				this.indexesOfAllLights.forEach((positionOfCurrentElement) => {
 					if (this.desk[positionOfCurrentElement + roll] >= -1) {
 						positions.push(positionOfCurrentElement + roll);
@@ -173,50 +164,68 @@ export default {
 		positionsAvailableForCurrentPlayer() {
 			return this.ifTurnOfLight ? this.positionsAvailableForLights : this.positionsAvailableForDark;
 		},
+		positionsPossiblyAvailableForSelectedDraught() {
+			let arr = [];
+			this.leftTurns.forEach((roll) => {
+				arr.push(this.indexOfSelectedDraught + roll.value);
+			});
+			return arr;
+			//[this.indexOfSelectedDraught + this.rolls[0], this.indexOfSelectedDraught + this.rolls[1]];
+			//if we got double roll we wouldnt need to check 3th & 4th because every single roll is the same
+		},
 		positionsAvailableForSelectedDraught() {
-			return this.ifTurnOfLight
-				? [this.indexOfSelectedDraught + this.firstRoll, this.indexOfSelectedDraught + this.secondRoll]
-				: [this.indexOfSelectedDraught - this.firstRoll, this.indexOfSelectedDraught - this.secondRoll];
+			return this.positionsPossiblyAvailableForSelectedDraught.filter((indexes) =>
+				this.positionsAvailableForCurrentPlayer.includes(indexes)
+			);
 		},
 		possibleToGetIn() {
 			return this.ifTurnOfLight ? this.darkHome.some((el) => el >= -1) : this.lightHome.some((el) => el <= 1);
+		},
+		leftTurns() {
+			return this.rolls.filter((roll) => roll.used === false);
 		}
 	},
 	methods: {
 		roll() {
-			if (this.ifTurnOLight) {
-				return Math.floor(Math.random() * (this.maxRoll - this.minRoll) + 1);
+			const action = Math.floor(Math.random() * (this.maxRoll - this.minRoll) + 1);
+			if (this.turnOf === true || this.turnOf === null) {
+				return action; //returns positive because we need to equate positive numbeers in first roll.
 			} else {
-				return -Math.abs(Math.floor(Math.random() * (this.maxRoll - this.minRoll) + 1));
+				return -action; //returns negative because it's needed for darks going in opposite direction
+				//Or if it's turn of dark
 			}
 		},
 		firstGameRoll() {
-			this.firstRoll = this.roll();
-			this.secondRoll = this.roll();
-			if (this.firstRoll > this.secondRoll) {
+			this.rolls[0].value = this.roll();
+			this.rolls[0].used = false;
+			this.rolls[1].value = this.roll();
+			this.rolls[1].used = false;
+
+			if (this.rolls[0].value > this.rolls[1].value) {
 				this.turnOf = true; //first turn is the turn of lights
-			} else if (this.firstRoll < this.secondRoll) {
+			} else if (this.rolls[0].value < this.rolls[1].value) {
 				this.turnOf = false; //first turn is the turn of darks
 			} else {
 				this.askedForRerroll = true;
 				return;
 			}
+			this.askedForRerroll = false;
+			this.begginingOfTheTurn();
 		},
 		begginingOfTheTurn() {
-			this.firstRoll = this.roll();
-			this.secondRoll = this.roll();
-			if ((!this.possibleToGetIn && this.ifPlayerNeedToEnter) || !this.ifAnyPositionIsAvailable) {
-				this.theEndOfTurn();
-			} else {
-				if (this.rollsAreEqual) {
-					this.turnsLeft = 4;
-				} else {
-					this.turnsLeft = 2;
-				}
+			this.rolls[0] = {
+				value: this.roll(),
+				used: false
+			};
+			this.rolls[1] = {
+				value: this.roll(),
+				used: false
+			};
+			if (this.rollsAreEqual) {
+				this.rolls[2] = this.rolls[3] = this.rolls[0];
 			}
 		},
 		theEndOfTurn() {
-			this.turnsLeft = 0;
 			this.indexOfSelectedDraught = null;
 			this.indexOfSelectedColumn = null;
 			this.turnOf = !this.turnOf;
@@ -226,35 +235,88 @@ export default {
 		},
 		selectColumn(target) {
 			this.indexOfSelectedColumn = target;
+			this.moveDraught();
 		},
 		moveDraught() {
-			if (this.ifTurnOfLight) {
-				if (this.desk[this.indexOfSelectedColumn] === -1) {
-					this.deadDarks++;
-					this.desk[this.indexOfSelectedColumn]++;
+			if (this.positionsAvailableForSelectedDraught.includes(this.indexOfSelectedColumn)) {
+				if (this.turnOfLight) {
+					if (this.desk[this.indexOfSelectedColumn === -1]) {
+						this.indexOfSelectedColumn++;
+						this.deadDarks++;
+					}
+					this.indexOfSelectedDraught--;
+					this.indexOfSelectedColumn++;
+				} else {
+					if (this.desk[this.indexOfSelectedColumn === 1]) {
+						this.indexOfSelectedColumn--;
+						this.deadLights++;
+					}
+					this.indexOfSelectedDraught++;
+					this.indexOfSelectedColumn--;
 				}
-				this.desk[this.indexOfSelectedDraught]--;
-				this.desk[this.indexOfSelectedColumn]++;
-			} else {
-				if (this.desk[this.indexOfSelectedColumn] === 1) {
-					this.deadLights++;
-					this.desk[this.indexOfSelectedColumn]--;
-				}
-				this.desk[this.indexOfSelectedDraught]++;
-				this.desk[this.indexOfSelectedColumn]--;
+				const wastedTurnIndex = this.rolls.findIndex(
+					(i) =>
+						i.value === Math.abs(this.indexOfSelectedDraught - this.indexOfSelectedColumn) &&
+						i.used === false
+				);
+				this.rolls[wastedTurnIndex].used = true;
 			}
-			this.turnsLeft--;
+		},
+		useRoll(value) {
+			const wastedTurnIndex = this.rolls.findIndex(
+				(i) => i.value === value && i.used === false
+				//it's -1 because every dead figure is like on 'start' of the game
+			);
+			this.rolls[wastedTurnIndex].used = true;
+		},
+		ressurect() {
+			/*
+			IF light ressurects:
+			range of index ressurections: 0 - 5
+			IF dark ressurects:
+			range of index ressurections: 23 - 18
+			*/
+			if (this.turnOfLight) {
+				this.desk[this.indexOfSelectedColumn]++;
+				this.deadLights--;
+				const wastedTurnIndex = this.rolls.findIndex(
+					(i) => i.value === this.indexOfSelectedColumn - 1 && i.used === false
+					//it's -1 because every dead figure is like on 'start' of the game
+				);
+				this.rolls[wastedTurnIndex].used = true;
+			} else {
+				this.desk[this.indexOfSelectedColumn]--;
+				this.deadDarks--;
+			}
+			const wastedTurnIndex = this.rolls.findIndex(
+				(i) => i.value === Math.abs(this.indexOfSelectedColumn - 23 - 1) && i.used === false
+			);
+			this.rolls[wastedTurnIndex].used = true;
+		},
+		getOut() {
+			if (this.turnOfLight) {
+				this.desk[this.indexOfSelectedDraught]--;
+				this.lightsOut++;
+			} else {
+				this.desk[this.indexOfSelectedDraught]++;
+				this.darksOut++;
+			}
+			const wastedTurnIndex = this.rolls.findIndex(
+				(i) => i.value === Math.abs(-1 - this.indexOfSelectedColumn) && i.used === false
+				//it's -1 because every dead figure is like on 'start' of the game
+			);
+			this.rolls[wastedTurnIndex].used = true;
 		}
 	},
 	watch: {
-		ifAnyPositionIsAvailable: function () {
-			if (!this.ifAnyPositionIsAvailable) {
+		leftTurns: function () {
+			if (this.leftTurns.length === 0) {
 				this.theEndOfTurn();
 				this.begginingOfTheTurn();
 			}
 		},
-		turnsLeft: function () {
-			if (this.turnsLeft === 0) {
+		possibleToGetIn: function () {
+			if (this.needToGetIn && !this.possibleToGetIn) {
 				this.theEndOfTurn();
 				this.begginingOfTheTurn();
 			}
