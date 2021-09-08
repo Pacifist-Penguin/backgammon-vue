@@ -10,49 +10,71 @@
 	<h1 v-show="turnOf != null">{{ turnOf ? "Lights" : "Darks" }}</h1>
 	<h3 v-show="askedForRerroll && turnOf === null">Wow, rolls are equal, please try rerrolling</h3>
 	{{ indexOfSelectedDraught }} {{ indexOfSelectedColumn }}
-	<div class="desk">
-		<div class="rowContainer">
-			<div class="firstRow">
-				<span v-for="(draughtNumber, index) in firstRow" v-bind:key="index">
-					<desk-column
-						:draughtNumber="draughtNumber"
-						:indexOfColumnOnDesk="index"
-						@selectedColumn="selectColumn"
-					>
-						<draught-figure
-							@selected="selectDraught"
+	<div>
+		<div class="desk">
+			<div class="rowContainer">
+				<div class="firstRow">
+					<span v-for="(draughtNumber, index) in firstRow" v-bind:key="index">
+						<desk-column
 							:draughtNumber="draughtNumber"
 							:indexOfColumnOnDesk="index"
-						/>
-					</desk-column>
-				</span>
+							@selectedColumn="selectColumn"
+						>
+							<draught-figure
+								@selected="selectDraught"
+								:draughtNumber="draughtNumber"
+								:indexOfColumnOnDesk="index"
+							/>
+						</desk-column>
+					</span>
+				</div>
 			</div>
-		</div>
-		<div class="rowContainer">
-			<div class="secondRow">
-				<span v-for="(draughtNumber, index) in secondRow" v-bind:key="index">
-					<desk-column
-						:draughtNumber="draughtNumber"
-						:indexOfColumnOnDesk="index + 12"
-						@selectedColumn="selectColumn"
-					>
-						<draught-figure
-							@selected="selectDraught"
+			<div class="rowContainer">
+				<div class="secondRow">
+					<span v-for="(draughtNumber, index) in secondRow" v-bind:key="index">
+						<desk-column
 							:draughtNumber="draughtNumber"
 							:indexOfColumnOnDesk="index + 12"
-						/>
-					</desk-column>
-				</span>
+							@selectedColumn="selectColumn"
+						>
+							<draught-figure
+								@selected="selectDraught"
+								:draughtNumber="draughtNumber"
+								:indexOfColumnOnDesk="index + 12"
+							/>
+						</desk-column>
+					</span>
+				</div>
 			</div>
+			<h1>
+				<span v-for="(items, index) in leftTurns" :key="index">{{ leftTurns[index].value }}</span>
+			</h1>
+			<h1>Turns left: {{ leftTurns.length }}</h1>
 		</div>
-		<h1>
-			<span v-for="(items, index) in leftTurns" :key="index">{{ leftTurns[index].value }}</span>
-		</h1>
-		<h1>Turns left: {{ leftTurns.length }}</h1>
+		<div class="light leavedFigures">
+			<draught-figure
+				@selected="selectDeadDraught"
+				v-for="(items, index) in lightsOut"
+				:key="index"
+				:draughtNumber="1"
+				:indexOfColumnOnDesk="index"
+			/>
+		</div>
+		<div class="dark leavedFigures">
+			<draught-figure
+				@selected="selectDeadDraught"
+				v-for="(items, index) in darksOut"
+				:key="index"
+				:draughtNumber="-1"
+				:indexOfColumnOnDesk="index"
+			/>
+		</div>
 	</div>
+
 	<div class="dead-figures">
 		<ul class="light-figures">
 			<draught-figure
+				@selected="selectDeadDraught"
 				v-for="(items, index) in deadLights"
 				:key="index"
 				:draughtNumber="1"
@@ -61,6 +83,7 @@
 		</ul>
 		<ul class="dark-figures">
 			<draught-figure
+				@selected="selectDeadDraught"
 				v-for="(items, index) in deadDarks"
 				:key="index"
 				:draughtNumber="-1"
@@ -102,10 +125,10 @@ export default {
 			],
 			indexOfSelectedDraught: null,
 			indexOfSelectedColumn: null,
-			deadLights: 0,
-			deadDarks: 0,
-			lightsOut: 0,
-			darksOut: 0
+			deadLights: 1,
+			deadDarks: 1,
+			lightsOut: 2,
+			darksOut: 2
 		};
 	},
 	computed: {
@@ -140,8 +163,8 @@ export default {
 		positionsAvailableForDark() {
 			const positions = [];
 			for (let index = 0; index < this.leftTurns.length; index++) {
-				const roll = this.leftTurns[index];
-				this.indexesOfAllLights.forEach((positionOfCurrentElement) => {
+				const roll = this.leftTurns[index].value;
+				this.indexesOfAllDarks.forEach((positionOfCurrentElement) => {
 					if (this.desk[positionOfCurrentElement + roll] <= 1) {
 						positions.push(positionOfCurrentElement + roll);
 					}
@@ -152,7 +175,7 @@ export default {
 		positionsAvailableForLights() {
 			const positions = [];
 			for (let index = 0; index < this.leftTurns.length; index++) {
-				const roll = this.leftTurns[index];
+				const roll = this.leftTurns[index].value;
 				this.indexesOfAllLights.forEach((positionOfCurrentElement) => {
 					if (this.desk[positionOfCurrentElement + roll] >= -1) {
 						positions.push(positionOfCurrentElement + roll);
@@ -170,19 +193,33 @@ export default {
 				arr.push(this.indexOfSelectedDraught + roll.value);
 			});
 			return arr;
-			//[this.indexOfSelectedDraught + this.rolls[0], this.indexOfSelectedDraught + this.rolls[1]];
-			//if we got double roll we wouldnt need to check 3th & 4th because every single roll is the same
 		},
 		positionsAvailableForSelectedDraught() {
-			return this.positionsPossiblyAvailableForSelectedDraught.filter((indexes) =>
-				this.positionsAvailableForCurrentPlayer.includes(indexes)
+			return this.positionsAvailableForCurrentPlayer.filter((indexes) =>
+				this.positionsPossiblyAvailableForSelectedDraught.includes(indexes)
 			);
+		},
+		positionsAvailableForSelectedDeadDraught() {
+			return this.ifTurnOfLight
+				? this.positionsPossiblyAvailableForSelectedDraught.filter((index) => this.desk[index] >= -1)
+				: this.positionsPossiblyAvailableForSelectedDraught.filter((index) => this.desk[index] <= 1);
 		},
 		possibleToGetIn() {
 			return this.ifTurnOfLight ? this.darkHome.some((el) => el >= -1) : this.lightHome.some((el) => el <= 1);
 		},
 		leftTurns() {
 			return this.rolls.filter((roll) => roll.used === false);
+		},
+		ifPlayerIsAbleToleave() {
+			return this.positionsAvailableForCurrentPlayer;
+		},
+		highestIndexInHomeOfCurrentPlayer() {
+			return this.ifTurnOfLight
+				? this.lightHome.findIndex((item) => item >= 1)
+				: //its sliced only to make a copy of array instead of mutating it
+				  this.darkHome.slice()
+						.reverse()
+						.findIndex((item) => item <= -1)
 		}
 	},
 	methods: {
@@ -233,79 +270,87 @@ export default {
 		selectDraught(target) {
 			this.indexOfSelectedDraught = target;
 		},
+		selectDeadDraught() {
+			this.ifTurnOfLight ? (this.indexOfSelectedDraught = -1) : (this.indexOfSelectedDraught = 24);
+		},
 		selectColumn(target) {
 			this.indexOfSelectedColumn = target;
-			this.moveDraught();
+			if (this.ifTurnOfLight ? this.deadLights : this.deadDarks) {
+				this.ressurect();
+			} else {
+				this.moveDraught();
+			}
 		},
 		moveDraught() {
 			if (this.positionsAvailableForSelectedDraught.includes(this.indexOfSelectedColumn)) {
-				if (this.turnOfLight) {
-					if (this.desk[this.indexOfSelectedColumn === -1]) {
-						this.indexOfSelectedColumn++;
+				if (this.ifTurnOfLight) {
+					if (this.desk[this.indexOfSelectedColumn] === -1) {
+						this.desk[this.indexOfSelectedColumn]++;
 						this.deadDarks++;
 					}
-					this.indexOfSelectedDraught--;
-					this.indexOfSelectedColumn++;
+					this.desk[this.indexOfSelectedDraught]--;
+					this.desk[this.indexOfSelectedColumn]++;
+					this.useRoll(this.indexOfSelectedColumn - this.indexOfSelectedDraught);
 				} else {
-					if (this.desk[this.indexOfSelectedColumn === 1]) {
-						this.indexOfSelectedColumn--;
+					if (this.desk[this.indexOfSelectedColumn] === 1) {
+						this.desk[this.indexOfSelectedColumn]--;
 						this.deadLights++;
 					}
-					this.indexOfSelectedDraught++;
-					this.indexOfSelectedColumn--;
+					this.desk[this.indexOfSelectedDraught]++;
+					this.desk[this.indexOfSelectedColumn]--;
+					console.log(-(this.indexOfSelectedDraught - this.indexOfSelectedColumn));
+					this.useRoll(-(this.indexOfSelectedDraught - this.indexOfSelectedColumn));
 				}
-				const wastedTurnIndex = this.rolls.findIndex(
-					(i) =>
-						i.value === Math.abs(this.indexOfSelectedDraught - this.indexOfSelectedColumn) &&
-						i.used === false
-				);
-				this.rolls[wastedTurnIndex].used = true;
 			}
 		},
 		useRoll(value) {
-			const wastedTurnIndex = this.rolls.findIndex(
-				(i) => i.value === value && i.used === false
-				//it's -1 because every dead figure is like on 'start' of the game
-			);
+			console.log(value, "is value in useRoll");
+			// const wastedTurnIndex = this.rolls.findIndex((i) => i.value === value && i.used === false);
+			const wastedTurnIndex = this.rolls.findIndex((i) => {
+				return i.value === value && i.used === false;
+			});
+			console.log(this.rolls[wastedTurnIndex], wastedTurnIndex, "is object and index in useRoll");
 			this.rolls[wastedTurnIndex].used = true;
 		},
 		ressurect() {
-			/*
-			IF light ressurects:
-			range of index ressurections: 0 - 5
-			IF dark ressurects:
-			range of index ressurections: 23 - 18
-			*/
-			if (this.turnOfLight) {
-				this.desk[this.indexOfSelectedColumn]++;
-				this.deadLights--;
-				const wastedTurnIndex = this.rolls.findIndex(
-					(i) => i.value === this.indexOfSelectedColumn - 1 && i.used === false
-					//it's -1 because every dead figure is like on 'start' of the game
-				);
-				this.rolls[wastedTurnIndex].used = true;
-			} else {
-				this.desk[this.indexOfSelectedColumn]--;
-				this.deadDarks--;
+			console.log(this.positionsAvailableForSelectedDeadDraught.includes(this.indexOfSelectedColumn));
+			if (this.positionsAvailableForSelectedDeadDraught.includes(this.indexOfSelectedColumn)) {
+				if (this.ifTurnOfLight) {
+					this.desk[this.indexOfSelectedColumn]++;
+					this.deadLights--;
+					this.useRoll(this.indexOfSelectedColumn + 1);
+					//it's + 1 because every dead figure is like on 'start' of the game
+					//and darks starts at 0, but to get here u have to roll at least 1
+				} else {
+					this.desk[this.indexOfSelectedColumn]--;
+					this.deadDarks--;
+					this.useRoll(this.indexOfSelectedColumn - 24);
+					//24 is length of desk
+					//example: dark figure starts at desk[23], 23-24 = -1
+					//since there is Math.abs(), it returns 1, so our useRoll is looking for unused roll with value === 1
+				}
 			}
-			const wastedTurnIndex = this.rolls.findIndex(
-				(i) => i.value === Math.abs(this.indexOfSelectedColumn - 23 - 1) && i.used === false
-			);
-			this.rolls[wastedTurnIndex].used = true;
 		},
 		getOut() {
-			if (this.turnOfLight) {
-				this.desk[this.indexOfSelectedDraught]--;
-				this.lightsOut++;
+			if (this.ifTurnOfLight) {
+				if (
+					this.ifSelectedDraughtsIndexIsHighest ||
+					this.leftTurns.filter((el) => el.value === Math.abs(this.indexOfSelectedColumn - 24))
+				) {
+					this.desk[this.indexOfSelectedDraught]--;
+					this.lightsOut++;
+					this.useRoll(Math.abs(this.indexOfSelectedColumn - 24));
+				}
 			} else {
-				this.desk[this.indexOfSelectedDraught]++;
-				this.darksOut++;
+				if (
+					this.ifSelectedDraughtsIndexIsHighest ||
+					this.leftTurns.filter((el) => el.value === Math.abs(this.indexOfSelectedColumn + 1))
+				) {
+					this.desk[this.indexOfSelectedDraught]++;
+					this.darksOut++;
+					this.useRoll(Math.abs(this.indexOfSelectedColumn + 1));
+				}
 			}
-			const wastedTurnIndex = this.rolls.findIndex(
-				(i) => i.value === Math.abs(-1 - this.indexOfSelectedColumn) && i.used === false
-				//it's -1 because every dead figure is like on 'start' of the game
-			);
-			this.rolls[wastedTurnIndex].used = true;
 		}
 	},
 	watch: {
@@ -341,5 +386,9 @@ export default {
 }
 .rowContainer {
 	display: flex;
+}
+.leavedFigures {
+	background-color: yellow;
+	border: 1px solid blue;
 }
 </style>
