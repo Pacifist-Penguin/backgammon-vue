@@ -109,7 +109,7 @@ export default {
 			//upper-right corner -> upper left -> bottom left -> bottom right
 			//positive numbers represents light draughts, negative numbers represents dark
 			//desk: [2, 0, 0, 0, 0, -5, 0, -3, 0, 0, 0, 5, -5, 0, 0, 0, 3, 0, 5, 0, 0, 0, 0, -2],
-			desk: [-2, 0, -2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 0, 2],
+			desk: [-2, 0, 0, 0, -2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 0, 2],
 			turnOf: null, //true === light, false === darks
 			minRoll: 1,
 			maxRoll: 6,
@@ -231,6 +231,8 @@ export default {
 						highestIndexInHomeOfCurrentPlayer.push(index);
 					}
 				});
+				highestIndexInHomeOfCurrentPlayer = highestIndexInHomeOfCurrentPlayer.pop() 
+				//since findIndex returns first element, i had to do this.
 			}
 			return highestIndexInHomeOfCurrentPlayer;
 			//returned index represents only the position of draught INSIDE player's home
