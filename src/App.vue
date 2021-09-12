@@ -225,14 +225,11 @@ export default {
 			if (this.ifTurnOfLight) {
 				highestIndexInHomeOfCurrentPlayer = this.lightHome.findIndex((item) => item >= 1);
 			} else {
-				highestIndexInHomeOfCurrentPlayer = [];
-				this.darkHome.forEach((item, index) => {
-					if (item <= -1) {
-						highestIndexInHomeOfCurrentPlayer.push(index);
-					}
-				});
-				highestIndexInHomeOfCurrentPlayer = highestIndexInHomeOfCurrentPlayer.pop() 
-				//since findIndex returns first element, i had to do this.
+				highestIndexInHomeOfCurrentPlayer = this.darkHome;
+				highestIndexInHomeOfCurrentPlayer.reverse();
+				highestIndexInHomeOfCurrentPlayer = Math.abs(
+					highestIndexInHomeOfCurrentPlayer.findIndex((item) => item <= -1) - 6
+				);
 			}
 			return highestIndexInHomeOfCurrentPlayer;
 			//returned index represents only the position of draught INSIDE player's home
