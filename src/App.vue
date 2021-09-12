@@ -108,8 +108,8 @@ export default {
 			//contains position of all draughts
 			//upper-right corner -> upper left -> bottom left -> bottom right
 			//positive numbers represents light draughts, negative numbers represents dark
-			//desk: [2, 0, 0, 0, 0, -5, 0, -3, 0, 0, 0, 5, -5, 0, 0, 0, 3, 0, 5, 0, 0, 0, 0, -2],
-			desk: [-2, 0, 0, 0, -2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 0, 2],
+			desk: [2, 0, 0, 0, 0, -5, 0, -3, 0, 0, 0, 5, -5, 0, 0, 0, 3, 0, 5, 0, 0, 0, 0, -2],
+			//desk: [-2, 0, 0, 0, -2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 0, 2],
 			turnOf: null, //true === light, false === darks
 			minRoll: 1,
 			maxRoll: 6,
@@ -265,17 +265,19 @@ export default {
 			this.begginingOfTheTurn();
 		},
 		begginingOfTheTurn() {
+			let firstRoll = this.roll();
+			let secondRoll = this.roll();
 			this.rolls[0] = {
-				value: this.roll(),
+				value: firstRoll,
 				used: false
 			};
 			this.rolls[1] = {
-				value: this.roll(),
+				value: secondRoll,
 				used: false
 			};
 			if (this.rollsAreEqual) {
-				this.rolls.push(this.rolls[0]);
-				this.rolls.push(this.rolls[0]);
+				this.rolls[2] = { value: firstRoll, used: false };
+				this.rolls[3] = { value: firstRoll, used: false };
 			}
 		},
 		theEndOfTurn() {
