@@ -109,7 +109,6 @@ export default {
 			//upper-right corner -> upper left -> bottom left -> bottom right
 			//positive numbers represents light draughts, negative numbers represents dark
 			desk: [2, 0, 0, 0, 0, -5, 0, -3, 0, 0, 0, 5, -5, 0, 0, 0, 3, 0, 5, 0, 0, 0, 0, -2],
-			//desk: [-2, 0, 0, 0, -2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 0, 2],
 			turnOf: null, //true === light, false === darks
 			minRoll: 1,
 			maxRoll: 6,
@@ -128,8 +127,8 @@ export default {
 			indexOfSelectedColumn: null,
 			deadLights: 0,
 			deadDarks: 0,
-			lightsOut: 11,
-			darksOut: 11
+			lightsOut: 0,
+			darksOut: 0
 		};
 	},
 	computed: {
@@ -344,27 +343,17 @@ export default {
 				}
 			}
 		},
-		rollValue(selectedDraughtsLocalIndex) {
-			const equalRoll = this.leftTurns.filter((turn) => turn.value === selectedDraughtsLocalIndex);
-			if (equalRoll.length > 0) {
-				console.log(equalRoll);
-			} else {
-				const rollHigher = this.leftTurns.filter((turn) => turn.value >= selectedDraughtsLocalIndex);
-				console.log(rollHigher);
-			}
-		},
 		getOut() {
 			if (this.ifAllFiguresOfCurrentPlayerIsInHome) {
 				if (this.ifTurnOfLight) {
 					const selectedDraughtsLocalIndex = Math.abs(this.indexOfSelectedDraught - 24);
 					if (
-						this.leftTurns.filter((turn) => turn.value === selectedDraughtsLocalIndex) ||
+						this.leftTurns.filter((turn) => turn.value === selectedDraughtsLocalIndex).length > 0 ||
 						(selectedDraughtsLocalIndex === this.highestIndexInHomeOfCurrentPlayer &&
-							this.leftTurns.filter((turn) => turn.value >= selectedDraughtsLocalIndex))
+							this.leftTurns.filter((turn) => turn.value >= selectedDraughtsLocalIndex)).length > 0
 					) {
 						const correctRoll = this.leftTurns.filter((turn) => turn.value >= selectedDraughtsLocalIndex);
 						this.desk[this.indexOfSelectedDraught]--;
-						console.log(correctRoll);
 						this.lightsOut++;
 						this.useRoll(Math.abs(correctRoll[0].value));
 					}
@@ -376,7 +365,6 @@ export default {
 							this.leftTurns.filter((turn) => turn.value <= -selectedDraughtsLocalIndex).length > 0)
 					) {
 						const correctRoll = this.leftTurns.filter((turn) => turn.value <= -selectedDraughtsLocalIndex);
-						console.log(correctRoll);
 						this.desk[this.indexOfSelectedDraught]++;
 						this.darksOut++;
 						this.useRoll(correctRoll[0].value);
