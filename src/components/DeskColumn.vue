@@ -33,7 +33,6 @@ export default {
 	methods: {
 		selectColumn() {
 			this.$emit("selectedColumn", this.indexOfColumnOnDesk);
-			console.log("selected Column number:", this.indexOfColumnOnDesk);
 		}
 	}
 };
