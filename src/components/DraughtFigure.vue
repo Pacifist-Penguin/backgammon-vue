@@ -33,7 +33,6 @@ export default {
 	methods: {
 		selectDraught() {
 			this.$emit("selected", this.indexOfColumnOnDesk);
-			console.log("selected figure number:", this.indexOfColumnOnDesk);
 		}
 	}
 };
