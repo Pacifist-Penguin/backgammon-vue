@@ -1,1 +1,1 @@
-* REFACTOR THIS SHIT IT'S ALMOST BAD ENOUGH TO CONSIDER IT CRIME
+* restart this super spaghetti project
