@@ -108,8 +108,8 @@ export default {
 			//contains position of all draughts
 			//upper-right corner -> upper left -> bottom left -> bottom right
 			//positive numbers represents light draughts, negative numbers represents dark
-			//desk: [2, 0, 0, 0, 0, -5, 0, -3, 0, 0, 0, 5, -5, 0, 0, 0, 3, 0, 5, 0, 0, 0, 0, -2],
-			desk: [-1,-2,-2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,3,1],
+			desk: [2, 0, 0, 0, 0, -5, 0, -3, 0, 0, 0, 5, -5, 0, 0, 0, 3, 0, 5, 0, 0, 0, 0, -2],
+			//desk: [-1,-1,-2,0,-3,-8,0,0,0,0,0,0,1,0,0,0,0,0,5,1,3,2,2,1],
 			turnOf: null, //true === light, false === darks
 			minRoll: 1,
 			maxRoll: 6,
@@ -128,8 +128,8 @@ export default {
 			indexOfSelectedColumn: null,
 			deadLights: 0,
 			deadDarks: 0,
-			lightsOut: 11,
-			darksOut: 10
+			lightsOut: 0,
+			darksOut: 0
 		};
 	},
 	computed: {
@@ -223,7 +223,7 @@ export default {
 		highestIndexInHomeOfCurrentPlayer() {
 			let highestIndexInHomeOfCurrentPlayer;
 			if (this.ifTurnOfLight) {
-				highestIndexInHomeOfCurrentPlayer = this.lightHome.findIndex((item) => item >= 1);
+				highestIndexInHomeOfCurrentPlayer = Math.abs(this.lightHome.findIndex((item) => item >= 1) - 6);
 			} else {
 				highestIndexInHomeOfCurrentPlayer = this.darkHome;
 				highestIndexInHomeOfCurrentPlayer.reverse();
