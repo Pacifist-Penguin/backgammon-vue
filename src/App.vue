@@ -164,6 +164,9 @@ export default {
 				? this.indexesOfAllDarks
 				: null;
 		},
+		reducedDarkHome() {
+			return this.darkHome.reduce((previousValue, currentValue) => previousValue + currentValue) - this.darksOut;
+		},
 		ifAllFiguresOfCurrentPlayerIsInHome() {
 			const reducer = (previousValue, currentValue) => previousValue + currentValue;
 			return this.ifTurnOfLight
@@ -190,7 +193,7 @@ export default {
 			const positions = [];
 			const arr = this.indexesOfAllLights;
 			if (this.deadLights != 0) {
-				positions.push(-1);
+				arr.push(-1);
 			}
 			for (let index = 0; index < this.leftTurns.length; index++) {
 				const roll = this.leftTurns[index].value;
@@ -227,6 +230,30 @@ export default {
 		possibleToGetIn() {
 			return this.ifTurnOfLight ? this.darkHome.some((el) => el >= -1) : this.lightHome.some((el) => el <= 1);
 		},
+		canGetInLightHome() {
+			const positions = [];
+			const arr = this.lightHome;
+			arr.reverse();
+			this.leftTurns.forEach((roll) => {
+				roll = Math.abs(roll.value);
+				if (arr[roll - 1] <= 1) {
+					positions.push(roll);
+				}
+			});
+			return positions;
+		},
+		canGetInDarkHome() {
+			const positions = [];
+			this.leftTurns.forEach((roll) => {
+				if (this.darkHome[roll.value - 1] >= -1) {
+					positions.push(roll.value);
+				}
+			});
+			return positions;
+		},
+		canGetIn() {
+			return this.ifTurnOfLight ? this.canGetInDarkHome : this.canGetInLightHome;
+		},
 		needToGetIn() {
 			return this.ifTurnOfLight ? this.deadLights != 0 : this.deadDarks != 0;
 		},
@@ -236,7 +263,14 @@ export default {
 		highestIndexInHomeOfCurrentPlayer() {
 			let highestIndexInHomeOfCurrentPlayer;
 			if (this.ifTurnOfLight) {
-				highestIndexInHomeOfCurrentPlayer = Math.abs(this.lightHome.findIndex((item) => item >= 1) - 6);
+				const arr = [];
+				this.lightHome.forEach((item, index) => {
+					if (item >= 1) {
+						arr.push(index);
+					}
+				});
+				highestIndexInHomeOfCurrentPlayer = arr.reverse()[0] + 1;
+				//highestIndexInHomeOfCurrentPlayer = arr.findIndex((item) => item >= 1);
 			} else {
 				highestIndexInHomeOfCurrentPlayer = this.darkHome;
 				highestIndexInHomeOfCurrentPlayer.reverse();
@@ -341,31 +375,39 @@ export default {
 			}
 		},
 		useRoll(value) {
+			console.log("called with" + value);
 			const wastedTurnIndex = this.rolls.findIndex((i) => {
 				return i.value === value && i.used === false;
 			});
 			this.rolls[wastedTurnIndex].used = true;
 		},
 		ressurect() {
-			if (this.positionsAvailableForDeadDraughtOfCurrentPlayer.includes(this.indexOfSelectedColumn)) {
+			if (this.canGetIn.length > 0) {
+				const moveDistance = this.indexOfSelectedDraught - this.indexOfSelectedColumn;
 				if (this.ifTurnOfLight) {
-					this.desk[this.indexOfSelectedColumn]++;
-					if (this.desk[this.indexOfSelectedColumn] === -1) {
+					if (this.canGetIn.includes(Math.abs(moveDistance))) {
+						if (this.desk[this.indexOfSelectedColumn] === -1) {
+							this.desk[this.indexOfSelectedColumn]++;
+							this.deadDarks++;
+						}
 						this.desk[this.indexOfSelectedColumn]++;
-						this.deadDarks++;
+						this.deadLights--;
+						this.useRoll(this.indexOfSelectedColumn + 1);
 					}
-					this.deadLights--;
-					this.useRoll(this.indexOfSelectedColumn + 1);
 					//it's + 1 because every dead figure is like on 'start' of the game
 					//and darks starts at 0, but to get here u have to roll at least 1
 				} else {
-					if (this.desk[this.indexOfSelectedColumn] === 1) {
+					console.log(moveDistance);
+					if (this.canGetIn.includes(Math.abs(moveDistance))) {
+						if (this.desk[this.indexOfSelectedColumn] === 1) {
+							this.desk[this.indexOfSelectedColumn]--;
+							this.deadLights++;
+						}
 						this.desk[this.indexOfSelectedColumn]--;
-						this.deadLights++;
+						this.deadDarks--;
+						this.useRoll(this.indexOfSelectedColumn - 24);
 					}
-					this.desk[this.indexOfSelectedColumn]--;
-					this.deadDarks--;
-					this.useRoll(this.indexOfSelectedColumn - 24);
+
 					//24 is length of desk
 					//example: dark figure starts at desk[23], 23-24 = -1
 					//since there is Math.abs(), it returns 1, so our useRoll is looking for unused roll with value === 1
@@ -376,41 +418,43 @@ export default {
 			if (this.ifAllFiguresOfCurrentPlayerIsInHome && this.ifSelectedDraughtIsDraughtOfCurrentPlayer) {
 				if (this.ifTurnOfLight) {
 					const selectedDraughtsLocalIndex = Math.abs(this.indexOfSelectedDraught - 24);
-					console.log(
-						this.leftTurns.filter((turn) => turn.value === selectedDraughtsLocalIndex).length > 0,
-						"if there is available equal roll to selected index"
-					);
-					console.log(
-						(
-							selectedDraughtsLocalIndex === this.highestIndexInHomeOfCurrentPlayer &&
-							this.leftTurns.filter((turn) => turn.value >= selectedDraughtsLocalIndex)
-						).length > 0,
-						"if selected index is highest and there is >= roll available"
-					);
-					if (
-						this.leftTurns.filter((turn) => turn.value === selectedDraughtsLocalIndex).length > 0 ||
-						(
-							selectedDraughtsLocalIndex === this.highestIndexInHomeOfCurrentPlayer &&
-							this.leftTurns.filter((turn) => turn.value >= selectedDraughtsLocalIndex)
-						).length > 0
-					) {
-						const correctRoll = this.leftTurns.filter((turn) => turn.value >= selectedDraughtsLocalIndex);
+					if (this.leftTurns.filter((turn) => turn.value === selectedDraughtsLocalIndex).length > 0) {
+						let useThisRoll;
+						useThisRoll = this.leftTurns.filter((turn) => turn.value === selectedDraughtsLocalIndex)[0];
 						this.desk[this.indexOfSelectedDraught]--;
 						this.lightsOut++;
-						this.useRoll(Math.abs(correctRoll[0].value));
+						this.useRoll(useThisRoll.value);
+					} else {
+						console.log("not equal");
+						if (
+							selectedDraughtsLocalIndex === this.highestIndexInHomeOfCurrentPlayer &&
+							this.leftTurns.filter((turn) => turn.value >= selectedDraughtsLocalIndex).length > 0
+						) {
+							let useThisRoll;
+							useThisRoll = this.leftTurns.filter((turn) => turn.value >= selectedDraughtsLocalIndex)[0];
+							console.log(useThisRoll.value);
+							this.desk[this.indexOfSelectedDraught]--;
+							this.lightsOut++;
+							this.useRoll(useThisRoll.value);
+						}
 					}
 				} else {
 					const selectedDraughtsLocalIndex = this.indexOfSelectedDraught + 1;
-					if (
-						this.leftTurns.filter((turn) => turn.value === -selectedDraughtsLocalIndex).length > 0 ||
-						(selectedDraughtsLocalIndex === this.highestIndexInHomeOfCurrentPlayer &&
-							this.leftTurns.filter((turn) => turn.value <= -selectedDraughtsLocalIndex).length > 0)
+					let useThisRoll;
+					if (this.leftTurns.filter((turn) => turn.value === -selectedDraughtsLocalIndex).length > 0) {
+						useThisRoll = -selectedDraughtsLocalIndex;
+						this.useRoll(useThisRoll);
+						this.darksOut++;
+						this.desk[this.indexOfSelectedDraught]++;
+					} else if (
+						selectedDraughtsLocalIndex === this.highestIndexInHomeOfCurrentPlayer &&
+						this.leftTurns.filter((turn) => turn.value <= -selectedDraughtsLocalIndex).length > 0
 					) {
-						const correctRoll = this.leftTurns.filter((turn) => turn.value <= -selectedDraughtsLocalIndex);
-						console.log(correctRoll);
+						useThisRoll = this.leftTurns.filter((turn) => turn.value <= -selectedDraughtsLocalIndex)[0];
+						console.log(useThisRoll);
+						this.useRoll(useThisRoll.value);
 						this.desk[this.indexOfSelectedDraught]++;
 						this.darksOut++;
-						this.useRoll(correctRoll[0].value);
 					}
 				}
 			}
@@ -440,7 +484,7 @@ export default {
 			}
 		},
 		positionsAvailableForCurrentPlayer() {
-			if (this.positionsAvailableForCurrentPlayer.length === 0) {
+			if (this.positionsAvailableForCurrentPlayer.length === 0 && !this.ifAllFiguresOfCurrentPlayerIsInHome) {
 				this.theEndOfTurn();
 				this.begginingOfTheTurn();
 			}
