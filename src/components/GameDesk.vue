@@ -127,7 +127,7 @@ export default {
 			deadLights: 0,
 			deadDarks: 0,
 			lightsOut: 0,
-			darksOut: 14
+			darksOut: 0
 		};
 	},
 	computed: {
