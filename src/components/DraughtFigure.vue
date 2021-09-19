@@ -12,7 +12,7 @@
 
 <script>
 export default {
-	name: "draught",
+	name: "DraughtFigure",
 	emits: {
 		selected: (value) => typeof value === "number"
 	},

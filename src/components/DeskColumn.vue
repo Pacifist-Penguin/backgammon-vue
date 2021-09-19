@@ -8,6 +8,7 @@
 
 <script>
 export default {
+	name: "DeskColumn",
 	emits: {
 		selectedColumn: (value) => typeof value === "number"
 	},

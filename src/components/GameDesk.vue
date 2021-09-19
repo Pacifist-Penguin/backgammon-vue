@@ -1,5 +1,6 @@
 <template>
 	<div>
+		<modal-pick v-if="modalVisible" :roll="roll" @firstTurnOf="begginingOfTheGame" />
 		<button v-show="turnOf === null" @click="firstGameRoll">And the first turn will belong to:</button>
 		<h1 v-show="turnOf != null">{{ turnOf ? "Lights" : "Darks" }}</h1>
 		<h3 v-show="askedForRerroll && turnOf === null">Wow, rolls are equal, please try rerrolling</h3>
@@ -64,7 +65,6 @@
 				/>
 			</div>
 		</div>
-
 		<div class="dead-figures">
 			<ul class="light-figures">
 				<draught-figure
@@ -92,11 +92,14 @@
 <script>
 import DeskColumn from "@/components/DeskColumn.vue";
 import DraughtFigure from "@/components/DraughtFigure.vue";
+import ModalPick from '@/components/ModalPick.vue';
+
 export default {
 	name: "GameDesk",
 	components: {
 		DeskColumn,
-		DraughtFigure
+		DraughtFigure,
+		ModalPick
 	},
 	emits: {
 		won: (value) => typeof value === "boolean"
@@ -127,7 +130,8 @@ export default {
 			deadLights: 0,
 			deadDarks: 0,
 			lightsOut: 0,
-			darksOut: 0
+			darksOut: 0,
+			modalVisible: true
 		};
 	},
 	computed: {
@@ -307,22 +311,9 @@ export default {
 				//Or if it's turn of dark
 			}
 		},
-		firstGameRoll() {
-			this.rolls[0].value = this.roll();
-			this.rolls[0].used = false;
-			this.rolls[1].value = this.roll();
-			this.rolls[1].used = false;
-
-			if (this.rolls[0].value > this.rolls[1].value) {
-				this.turnOf = true; //first turn is the turn of lights
-			} else if (this.rolls[0].value < this.rolls[1].value) {
-				this.turnOf = false; //first turn is the turn of darks
-			} else {
-				this.askedForRerroll = true;
-				return;
-			}
-			this.askedForRerroll = false;
-			this.begginingOfTheTurn();
+		begginingOfTheGame(val) {
+			this.ifTurnOfLight = val
+			this.modalVisible = false
 		},
 		begginingOfTheTurn() {
 			let firstRoll = this.roll();
