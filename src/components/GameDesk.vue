@@ -95,7 +95,7 @@
 import DeskColumn from "@/components/DeskColumn.vue";
 import DraughtFigure from "@/components/DraughtFigure.vue";
 import ModalPick from "@/components/ModalPick.vue";
-import ModalOuter from "@/components/ModalOuter.vue"
+import ModalOuter from "@/components/ModalOuter.vue";
 import RollingDice from "@/components/RollingDice.vue";
 
 export default {
