@@ -1,6 +1,6 @@
 <template>
 	<header>
-		<audio controls loop autoplay id="228">
+		<audio controls loop autoplay>
 			<source src="@/assets/sound/music.ogg" />
 		</audio>
 		<h1>Backgammon</h1>

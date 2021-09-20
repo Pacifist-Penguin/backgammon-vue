@@ -1,38 +1,18 @@
 <template>
-	<div class="center modal">
-		<div><h1>{{text}}</h1></div>
-		<button ref="button" @click="firstGameRoll">Roll!</button>
-	</div>
+	<modal-outer>
+		<div class="modalBody">
+			<h1>{{ text }}</h1>
+			<button ref="button" @click="firstGameRoll">Roll!</button>
+		</div>
+	</modal-outer>
 </template>
 
-<style scoped>
-	.center {
-		position: absolute;
-		top: 50%;
-		left: 50%;
-		transform: translate(-50%, -50%);
-	}
-	.modal {
-		width: 100vmin;
-		height: 100vmin;
-		background-color: rgba(255, 255, 255, 0.7);
-	}
-	.modal > * {
-		margin-right: auto;
-		margin-left: auto;
-		display: flex;
-	}
-</style>
-
 <script>
+import ModalOuter from "@/components/ModalOuter.vue";
 export default {
 	name: "ModalPick",
-	data() {
-		return {
-			ifLightsTurnFirst: null,
-			askedForRerroll: false,
-			text: "Roll! Winner gets first try"
-		}
+	components: {
+		ModalOuter
 	},
 	emits: {
 		firstTurnOf: (bool) => typeof bool === "boolean"
@@ -41,10 +21,24 @@ export default {
 		roll: {
 			type: Function,
 			required: true
+			/*
+			roll is passed only for demonstration purposes. Still, i'd like to mention
+			that u shouldnt use "this" in passed-in (as a prop) function, because
+			it will work with context of child component, and most of the time
+			u dont want that to happen
+			this also stops ur component from being "independant" and reusable
+			*/
 		}
 	},
+	data() {
+		return {
+			ifLightsTurnFirst: null,
+			askedForRerroll: false,
+			text: "Roll! Winner gets first try"
+		};
+	},
 	mounted() {
-		this.$refs.button.focus() //focuses on button after mounting. Very handy actually.
+		this.$refs.button.focus(); //focuses on button after mounting. Very handy actually.
 	},
 	methods: {
 		firstGameRoll() {
@@ -57,19 +51,30 @@ export default {
 			} else {
 				this.askedForRerroll = true;
 			}
-		},
+		}
 	},
 	watch: {
-		roll: function() {
-			if (ifLightsTurnFirst != null) {
+		ifLightsTurnFirst: function () {
+			if (this.ifLightsTurnFirst != null) {
 				this.$emit("firstTurnOf", this.ifLightsTurnFirst);
 			}
 		},
-		askedForRerroll: function() {
-			if (askedForRerroll) {
-				this.text = "Draw! U should roll it once again"
+		askedForRerroll: function () {
+			if (this.askedForRerroll) {
+				this.text = "Draw! U should roll it once again";
 			}
 		}
 	}
-}
+};
 </script>
+<style scoped>
+.modalBody {
+	margin-right: auto;
+	margin-left: auto;
+	text-align: center;
+	display: block;
+	height: 10vmin;
+	margin-top: calc(50% - 10vmin);
+	margin-bottom: calc(50% - 10vmin);
+}
+</style>
