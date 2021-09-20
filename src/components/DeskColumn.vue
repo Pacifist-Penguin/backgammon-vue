@@ -1,7 +1,7 @@
 <template>
-	<div @click="selectColumn" :style="`background-color: ${computedStyle} `" class="column">
+	<div @click="selectColumn" :class="computedClass" class="column" :style="`background-color: ${computedStyle} `">
 		<div v-for="(draughts, index) in columnLength" :key="index">
-			<slot></slot>
+			<slot name="default"></slot>
 		</div>
 	</div>
 </template>
@@ -29,6 +29,9 @@ export default {
 		},
 		computedStyle() {
 			return this.indexOfColumnOnDesk % 2 === 0 ? "#0000FF" : "#BF3EFF";
+		},
+		computedClass() {
+			return { marginRight: this.indexOfColumnOnDesk === 6 || this.indexOfColumnOnDesk === 17 };
 		}
 	},
 	methods: {
@@ -46,5 +49,8 @@ export default {
 	list-style: none;
 	margin: 0;
 	width: 50px;
+}
+.marginRight {
+	margin-right: 5px;
 }
 </style>

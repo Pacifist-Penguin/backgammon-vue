@@ -1,9 +1,9 @@
 <template>
 	<div>
-		<modal-pick v-if="modalVisible" :roll="roll" @firstTurnOf="begginingOfTheGame" />
-		<button v-show="turnOf === null" @click="firstGameRoll">And the first turn will belong to:</button>
+		<modal-outer v-if="modalVisible">
+			<modal-pick :roll="roll" @firstTurnOf="begginingOfTheGame" />
+		</modal-outer>
 		<h1 v-show="turnOf != null">{{ turnOf ? "Lights" : "Darks" }}</h1>
-		<h3 v-show="askedForRerroll && turnOf === null">Wow, rolls are equal, please try rerrolling</h3>
 		{{ indexOfSelectedDraught }} {{ indexOfSelectedColumn }}
 		<div>
 			<div class="desk">
@@ -41,11 +41,13 @@
 						</span>
 					</div>
 				</div>
-				<h1>
-					<span v-for="(items, index) in leftTurns" :key="index">{{ leftTurns[index].value }}</span>
-				</h1>
-				<h1>Turns left: {{ leftTurns.length }}</h1>
 			</div>
+			<h1>
+				<span v-for="(items, index) in leftTurns" :key="index">
+					<rolling-dice :roll="leftTurns[index].value" />
+				</span>
+			</h1>
+			<h1>Turns left: {{ leftTurns.length }}</h1>
 			<div @click="getOut" class="light leavedFigures">
 				<draught-figure
 					@selected="selectDeadDraught"
@@ -92,14 +94,18 @@
 <script>
 import DeskColumn from "@/components/DeskColumn.vue";
 import DraughtFigure from "@/components/DraughtFigure.vue";
-import ModalPick from '@/components/ModalPick.vue';
+import ModalPick from "@/components/ModalPick.vue";
+import ModalOuter from "@/components/ModalOuter.vue"
+import RollingDice from "@/components/RollingDice.vue";
 
 export default {
 	name: "GameDesk",
 	components: {
 		DeskColumn,
 		DraughtFigure,
-		ModalPick
+		ModalPick,
+		ModalOuter,
+		RollingDice
 	},
 	emits: {
 		won: (value) => typeof value === "boolean"
@@ -311,9 +317,10 @@ export default {
 				//Or if it's turn of dark
 			}
 		},
-		begginingOfTheGame(val) {
-			this.ifTurnOfLight = val
-			this.modalVisible = false
+		begginingOfTheGame(value) {
+			this.turnOf = value;
+			this.modalVisible = false;
+			this.begginingOfTheTurn();
 		},
 		begginingOfTheTurn() {
 			let firstRoll = this.roll();
@@ -463,6 +470,7 @@ export default {
 		},
 		possibleToGetIn: function () {
 			if (this.needToGetIn && !this.possibleToGetIn) {
+				console.log("not possible to get in");
 				this.theEndOfTurn();
 				this.begginingOfTheTurn();
 			}
@@ -488,6 +496,11 @@ export default {
 </script>
 
 <style scoped>
+.desk {
+	background-color: brown;
+	display: inline-block;
+	border: solid 1vmin brown;
+}
 .firstRow {
 	display: flex;
 	flex-direction: row-reverse;
