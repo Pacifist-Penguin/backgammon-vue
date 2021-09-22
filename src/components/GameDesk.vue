@@ -3,7 +3,7 @@
 		<modal-outer v-if="modalVisible">
 			<modal-pick :roll="roll" @firstTurnOf="begginingOfTheGame" />
 		</modal-outer>
-		<h1 v-show="turnOf != null">{{ turnOf ? "Lights" : "Darks" }}</h1>
+		<h1 v-show="ifTurnOfLight != null">{{ ifTurnOfLight ? "Lights" : "Darks" }}</h1>
 		{{ indexOfSelectedDraught }} {{ indexOfSelectedColumn }}
 		<div>
 			<div class="desk">
@@ -117,7 +117,7 @@ export default {
 			//upper-right corner -> upper left -> bottom left -> bottom right
 			//positive numbers represents light draughts, negative numbers represents dark
 			desk: [2, 0, 0, 0, 0, -5, 0, -3, 0, 0, 0, 5, -5, 0, 0, 0, 3, 0, 5, 0, 0, 0, 0, -2],
-			turnOf: null, //true === light, false === darks
+			ifTurnOfLight: null, //true === light, false === darks
 			minRoll: 1,
 			maxRoll: 6,
 			askedForRerroll: false,
@@ -155,9 +155,6 @@ export default {
 		},
 		rollsAreEqual() {
 			return this.rolls[0].value === this.rolls[1].value;
-		},
-		ifTurnOfLight() {
-			return this.turnOf === true;
 		},
 		indexesOfAllLights() {
 			return this.desk.reduce((arr, el, index) => (el >= 1 && arr.push(index), arr), []);
@@ -240,7 +237,6 @@ export default {
 			return this.ifTurnOfLight
 				? this.positionsPossiblyAvailableForSelectedDraught.filter((index) => this.desk[index] >= -1)
 				: this.positionsPossiblyAvailableForSelectedDraught.filter((index) => this.desk[index] <= 1);
-			//return this.ifTurnOfLight ? this.-1 : (this.indexOfSelectedDraught = 24);
 		},
 		possibleToGetIn() {
 			return this.ifTurnOfLight ? this.darkHome.some((el) => el >= -1) : this.lightHome.some((el) => el <= 1);
@@ -285,7 +281,6 @@ export default {
 					}
 				});
 				highestIndexInHomeOfCurrentPlayer = arr.reverse()[0] + 1;
-				//highestIndexInHomeOfCurrentPlayer = arr.findIndex((item) => item >= 1);
 			} else {
 				highestIndexInHomeOfCurrentPlayer = this.darkHome;
 				highestIndexInHomeOfCurrentPlayer.reverse();
@@ -305,12 +300,37 @@ export default {
 			return this.ifTurnOfLight
 				? this.desk[this.indexOfSelectedDraught] > 0
 				: this.desk[this.indexOfSelectedDraught] < 0;
+		},
+		validValuesToGetOutIfSelectedDraughtHaveHighestIndex() {
+			if (this.ifCurrentlySelectedDraughtIsHighestInItsHome) {
+				return this.ifTurnOfLight
+					? this.leftTurns.filter((turn) => turn.value >= this.localIndexOfSelectedDraught)
+					: this.leftTurns.filter((turn) => turn.value <= this.localIndexOfSelectedDraught);
+			} else {
+				return [];
+			}
+		},
+		localIndexOfSelectedDraught() {
+			//refering to localIndexOfSelectedDraught in player's home
+			return this.ifTurnOfLight ? Math.abs(this.indexOfSelectedDraught - 24) : -(this.indexOfSelectedDraught + 1);
+		},
+		ifCurrentlySelectedDraughtIsHighestInItsHome() {
+			return Math.abs(this.localIndexOfSelectedDraught) === this.highestIndexInHomeOfCurrentPlayer;
+		},
+		waysToGetOutForSelectedDraught() {
+			if (this.ifAllFiguresOfCurrentPlayerIsInHome && this.ifSelectedDraughtIsDraughtOfCurrentPlayer) {
+				// this "if" statement is here is only to save up a resources.
+				// Otherwise we w'd have to filter this 2 arrays every time any of used variables changes
+				return this.leftTurns.filter((turn) => turn.value === this.localIndexOfSelectedDraught);
+			} else {
+				return [];
+			}
 		}
 	},
 	methods: {
 		roll() {
 			const action = Math.floor(Math.random() * (this.maxRoll - this.minRoll) + 1);
-			if (this.turnOf === true || this.turnOf === null) {
+			if (this.ifTurnOfLight === true || this.ifTurnOfLight === null) {
 				return action; //returns positive because we need to equate positive numbeers in first roll.
 			} else {
 				return -action; //returns negative because it's needed for darks going in opposite direction
@@ -318,7 +338,7 @@ export default {
 			}
 		},
 		begginingOfTheGame(value) {
-			this.turnOf = value;
+			this.ifTurnOfLight = value;
 			this.modalVisible = false;
 			this.begginingOfTheTurn();
 		},
@@ -343,7 +363,7 @@ export default {
 		theEndOfTurn() {
 			this.indexOfSelectedDraught = null;
 			this.indexOfSelectedColumn = null;
-			this.turnOf = !this.turnOf;
+			this.ifTurnOfLight = !this.ifTurnOfLight;
 		},
 		selectDraught(target) {
 			this.indexOfSelectedDraught = target;
@@ -376,7 +396,7 @@ export default {
 					}
 					this.desk[this.indexOfSelectedDraught]++;
 					this.desk[this.indexOfSelectedColumn]--;
-					this.useRoll(-(this.indexOfSelectedDraught - this.indexOfSelectedColumn));
+					this.useRoll(this.indexOfSelectedColumn - this.indexOfSelectedDraught);
 				}
 			}
 		},
@@ -390,6 +410,7 @@ export default {
 			if (this.canGetIn.length > 0) {
 				const moveDistance = this.indexOfSelectedDraught - this.indexOfSelectedColumn;
 				if (this.ifTurnOfLight) {
+					console.log(this.canGetIn.includes(Math.abs(moveDistance)))
 					if (this.canGetIn.includes(Math.abs(moveDistance))) {
 						if (this.desk[this.indexOfSelectedColumn] === -1) {
 							this.desk[this.indexOfSelectedColumn]++;
@@ -419,44 +440,37 @@ export default {
 			}
 		},
 		getOut() {
-			if (this.ifAllFiguresOfCurrentPlayerIsInHome && this.ifSelectedDraughtIsDraughtOfCurrentPlayer) {
-				if (this.ifTurnOfLight) {
-					const selectedDraughtsLocalIndex = Math.abs(this.indexOfSelectedDraught - 24);
-					if (this.leftTurns.filter((turn) => turn.value === selectedDraughtsLocalIndex).length > 0) {
-						let useThisRoll;
-						useThisRoll = this.leftTurns.filter((turn) => turn.value === selectedDraughtsLocalIndex)[0];
-						this.desk[this.indexOfSelectedDraught]--;
-						this.lightsOut++;
-						this.useRoll(useThisRoll.value);
-					} else {
-						if (
-							selectedDraughtsLocalIndex === this.highestIndexInHomeOfCurrentPlayer &&
-							this.leftTurns.filter((turn) => turn.value >= selectedDraughtsLocalIndex).length > 0
-						) {
-							let useThisRoll;
-							useThisRoll = this.leftTurns.filter((turn) => turn.value >= selectedDraughtsLocalIndex)[0];
-							this.desk[this.indexOfSelectedDraught]--;
-							this.lightsOut++;
-							this.useRoll(useThisRoll.value);
-						}
-					}
-				} else {
-					const selectedDraughtsLocalIndex = this.indexOfSelectedDraught + 1;
-					let useThisRoll;
-					if (this.leftTurns.filter((turn) => turn.value === -selectedDraughtsLocalIndex).length > 0) {
-						useThisRoll = -selectedDraughtsLocalIndex;
-						this.useRoll(useThisRoll);
-						this.darksOut++;
-						this.desk[this.indexOfSelectedDraught]++;
-					} else if (
-						selectedDraughtsLocalIndex === this.highestIndexInHomeOfCurrentPlayer &&
-						this.leftTurns.filter((turn) => turn.value <= -selectedDraughtsLocalIndex).length > 0
-					) {
-						useThisRoll = this.leftTurns.filter((turn) => turn.value <= -selectedDraughtsLocalIndex)[0];
-						this.useRoll(useThisRoll.value);
-						this.desk[this.indexOfSelectedDraught]++;
-						this.darksOut++;
-					}
+			if (this.ifTurnOfLight) {
+				let useThisRoll;
+				if (this.waysToGetOutForSelectedDraught.length > 0) {
+					useThisRoll = this.waysToGetOutForSelectedDraught[0];
+					this.desk[this.indexOfSelectedDraught]--;
+					this.lightsOut++;
+					this.useRoll(useThisRoll.value);
+				} else if (
+					this.ifCurrentlySelectedDraughtIsHighestInItsHome &&
+					this.validValuesToGetOutIfSelectedDraughtHaveHighestIndex.length > 0
+				) {
+					useThisRoll = this.validValuesToGetOutIfSelectedDraughtHaveHighestIndex[0];
+					this.desk[this.indexOfSelectedDraught]--;
+					this.lightsOut++;
+					this.useRoll(useThisRoll.value);
+				}
+			} else {
+				let useThisRoll;
+				if (this.waysToGetOutForSelectedDraught.length > 0) {
+					useThisRoll = this.localIndexOfSelectedDraught;
+					this.darksOut++;
+					this.desk[this.indexOfSelectedDraught]++;
+					this.useRoll(useThisRoll);
+				} else if (
+					this.ifCurrentlySelectedDraughtIsHighestInItsHome &&
+					this.validValuesToGetOutIfSelectedDraughtHaveHighestIndex.length > 0
+				) {
+					useThisRoll = this.validValuesToGetOutIfSelectedDraughtHaveHighestIndex[0];
+					this.darksOut++;
+					this.desk[this.indexOfSelectedDraught]++;
+					this.useRoll(useThisRoll.value);
 				}
 			}
 		}
@@ -471,6 +485,12 @@ export default {
 		possibleToGetIn: function () {
 			if (this.needToGetIn && !this.possibleToGetIn) {
 				console.log("not possible to get in");
+				this.theEndOfTurn();
+				this.begginingOfTheTurn();
+			}
+		},
+		canGetIn: function () {
+			if (this.needToGetIn && this.canGetIn.length === 0) {
 				this.theEndOfTurn();
 				this.begginingOfTheTurn();
 			}
