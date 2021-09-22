@@ -116,7 +116,8 @@ export default {
 			//contains position of all draughts
 			//upper-right corner -> upper left -> bottom left -> bottom right
 			//positive numbers represents light draughts, negative numbers represents dark
-			desk: [2, 0, 0, 0, 0, -5, 0, -3, 0, 0, 0, 5, -5, 0, 0, 0, 3, 0, 5, 0, 0, 0, 0, -2],
+			//desk: [2, 0, 0, 0, 0, -5, 0, -3, 0, 0, 0, 5, -5, 0, 0, 0, 3, 0, 5, 0, 0, 0, 0, -2],
+			desk: [-5, 0, -5, 0, 0, -5, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 5, 0, 5, 0, 5],
 			ifTurnOfLight: null, //true === light, false === darks
 			minRoll: 1,
 			maxRoll: 6,
@@ -273,28 +274,16 @@ export default {
 		},
 		highestIndexInHomeOfCurrentPlayer() {
 			let highestIndexInHomeOfCurrentPlayer;
-			if (this.ifTurnOfLight) {
-				const arr = [];
-				this.lightHome.forEach((item, index) => {
-					if (item >= 1) {
-						arr.push(index);
-					}
-				});
-				highestIndexInHomeOfCurrentPlayer = arr.reverse()[0] + 1;
-			} else {
-				highestIndexInHomeOfCurrentPlayer = this.darkHome;
-				highestIndexInHomeOfCurrentPlayer.reverse();
-				highestIndexInHomeOfCurrentPlayer = Math.abs(
-					highestIndexInHomeOfCurrentPlayer.findIndex((item) => item <= -1) - 6
-				);
-				if (highestIndexInHomeOfCurrentPlayer === -1) {
-					highestIndexInHomeOfCurrentPlayer = undefined;
-				}
+			const query = this.ifTurnOfLight ? (item) => item >= 1 : (item) => item <= -1;
+			const home = this.ifTurnOfLight ? this.lightHome : this.darkHome;
+			highestIndexInHomeOfCurrentPlayer = home;
+			highestIndexInHomeOfCurrentPlayer.reverse();
+			highestIndexInHomeOfCurrentPlayer = Math.abs(highestIndexInHomeOfCurrentPlayer.findIndex(query) - 6);
+			if (highestIndexInHomeOfCurrentPlayer === -1) {
+				highestIndexInHomeOfCurrentPlayer = undefined;
 			}
 			return highestIndexInHomeOfCurrentPlayer;
 			//returned index represents only the position of draught INSIDE player's home
-			//it means if we want to get to know about actual index, we would need to make
-			//aditional calculations
 		},
 		ifSelectedDraughtIsDraughtOfCurrentPlayer() {
 			return this.ifTurnOfLight
@@ -388,7 +377,6 @@ export default {
 					}
 					this.desk[this.indexOfSelectedDraught]--;
 					this.desk[this.indexOfSelectedColumn]++;
-					this.useRoll(this.indexOfSelectedColumn - this.indexOfSelectedDraught);
 				} else {
 					if (this.desk[this.indexOfSelectedColumn] === 1) {
 						this.desk[this.indexOfSelectedColumn]--;
@@ -396,8 +384,8 @@ export default {
 					}
 					this.desk[this.indexOfSelectedDraught]++;
 					this.desk[this.indexOfSelectedColumn]--;
-					this.useRoll(this.indexOfSelectedColumn - this.indexOfSelectedDraught);
 				}
+				this.useRoll(this.indexOfSelectedColumn - this.indexOfSelectedDraught);
 			}
 		},
 		useRoll(value) {
@@ -410,7 +398,7 @@ export default {
 			if (this.canGetIn.length > 0) {
 				const moveDistance = this.indexOfSelectedDraught - this.indexOfSelectedColumn;
 				if (this.ifTurnOfLight) {
-					console.log(this.canGetIn.includes(Math.abs(moveDistance)))
+					console.log(this.canGetIn.includes(Math.abs(moveDistance)));
 					if (this.canGetIn.includes(Math.abs(moveDistance))) {
 						if (this.desk[this.indexOfSelectedColumn] === -1) {
 							this.desk[this.indexOfSelectedColumn]++;
@@ -432,7 +420,6 @@ export default {
 						this.deadDarks--;
 						this.useRoll(this.indexOfSelectedColumn - 24);
 					}
-
 					//24 is length of desk
 					//example: dark figure starts at desk[23], 23-24 = -1
 					//since there is Math.abs(), it returns 1, so our useRoll is looking for unused roll with value === 1
@@ -440,37 +427,39 @@ export default {
 			}
 		},
 		getOut() {
-			if (this.ifTurnOfLight) {
-				let useThisRoll;
-				if (this.waysToGetOutForSelectedDraught.length > 0) {
-					useThisRoll = this.waysToGetOutForSelectedDraught[0];
-					this.desk[this.indexOfSelectedDraught]--;
-					this.lightsOut++;
-					this.useRoll(useThisRoll.value);
-				} else if (
-					this.ifCurrentlySelectedDraughtIsHighestInItsHome &&
-					this.validValuesToGetOutIfSelectedDraughtHaveHighestIndex.length > 0
-				) {
-					useThisRoll = this.validValuesToGetOutIfSelectedDraughtHaveHighestIndex[0];
-					this.desk[this.indexOfSelectedDraught]--;
-					this.lightsOut++;
-					this.useRoll(useThisRoll.value);
-				}
-			} else {
-				let useThisRoll;
-				if (this.waysToGetOutForSelectedDraught.length > 0) {
-					useThisRoll = this.localIndexOfSelectedDraught;
-					this.darksOut++;
-					this.desk[this.indexOfSelectedDraught]++;
-					this.useRoll(useThisRoll);
-				} else if (
-					this.ifCurrentlySelectedDraughtIsHighestInItsHome &&
-					this.validValuesToGetOutIfSelectedDraughtHaveHighestIndex.length > 0
-				) {
-					useThisRoll = this.validValuesToGetOutIfSelectedDraughtHaveHighestIndex[0];
-					this.darksOut++;
-					this.desk[this.indexOfSelectedDraught]++;
-					this.useRoll(useThisRoll.value);
+			if (this.ifAllFiguresOfCurrentPlayerIsInHome && this.ifSelectedDraughtIsDraughtOfCurrentPlayer) {
+				if (this.ifTurnOfLight) {
+					let useThisRoll;
+					if (this.waysToGetOutForSelectedDraught.length > 0) {
+						useThisRoll = this.waysToGetOutForSelectedDraught[0];
+						this.desk[this.indexOfSelectedDraught]--;
+						this.lightsOut++;
+						this.useRoll(useThisRoll.value);
+					} else if (
+						this.ifCurrentlySelectedDraughtIsHighestInItsHome &&
+						this.validValuesToGetOutIfSelectedDraughtHaveHighestIndex.length > 0
+					) {
+						useThisRoll = this.validValuesToGetOutIfSelectedDraughtHaveHighestIndex[0];
+						this.desk[this.indexOfSelectedDraught]--;
+						this.lightsOut++;
+						this.useRoll(useThisRoll.value);
+					}
+				} else {
+					let useThisRoll;
+					if (this.waysToGetOutForSelectedDraught.length > 0) {
+						useThisRoll = this.localIndexOfSelectedDraught;
+						this.darksOut++;
+						this.desk[this.indexOfSelectedDraught]++;
+						this.useRoll(useThisRoll);
+					} else if (
+						this.ifCurrentlySelectedDraughtIsHighestInItsHome &&
+						this.validValuesToGetOutIfSelectedDraughtHaveHighestIndex.length > 0
+					) {
+						useThisRoll = this.validValuesToGetOutIfSelectedDraughtHaveHighestIndex[0];
+						this.darksOut++;
+						this.desk[this.indexOfSelectedDraught]++;
+						this.useRoll(useThisRoll.value);
+					}
 				}
 			}
 		}
