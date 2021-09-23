@@ -9,6 +9,7 @@
 
 <script>
 import ModalOuter from "@/components/ModalOuter.vue";
+
 export default {
 	name: "ModalPick",
 	components: {
@@ -16,19 +17,6 @@ export default {
 	},
 	emits: {
 		firstTurnOf: (bool) => typeof bool === "boolean"
-	},
-	props: {
-		roll: {
-			type: Function,
-			required: true
-			/*
-			roll is passed only for demonstration purposes. Still, i'd like to mention
-			that u shouldnt use "this" in passed-in (as a prop) function, because
-			it will work with context of child component, and most of the time
-			u dont want that to happen
-			this also stops ur component from being "independant" and reusable
-			*/
-		}
 	},
 	data() {
 		return {
@@ -41,6 +29,10 @@ export default {
 		this.$refs.button.focus(); //focuses on button after mounting. Very handy actually.
 	},
 	methods: {
+		roll() {
+			const roll = Math.floor(Math.random() * (6 - 1) + 1);
+			return roll;
+		},
 		firstGameRoll() {
 			const firstRoll = this.roll();
 			const secondRoll = this.roll();
