@@ -1,8 +1,5 @@
 <template>
 	<div>
-		<modal-outer v-if="modalVisible">
-			<modal-pick :roll="roll" @firstTurnOf="begginingOfTheGame" />
-		</modal-outer>
 		<h1 v-show="ifTurnOfLight != null">{{ ifTurnOfLight ? "Lights" : "Darks" }}</h1>
 		{{ indexOfSelectedDraught }} {{ indexOfSelectedColumn }}
 		<div>
@@ -94,8 +91,6 @@
 <script>
 import DeskColumn from "@/components/DeskColumn.vue";
 import DraughtFigure from "@/components/DraughtFigure.vue";
-import ModalPick from "@/components/ModalPick.vue";
-import ModalOuter from "@/components/ModalOuter.vue";
 import RollingDice from "@/components/RollingDice.vue";
 
 export default {
@@ -103,13 +98,17 @@ export default {
 	components: {
 		DeskColumn,
 		DraughtFigure,
-		ModalPick,
-		ModalOuter,
 		RollingDice
 	},
 	emits: {
 		won: (value) => typeof value === "boolean"
 		// emits winner, true = lights, false = darks
+	},
+	props: {
+		firstTurnOf: {
+			//it's Boolean OR null
+			required: true
+		}
 	},
 	data() {
 		return {
@@ -117,7 +116,7 @@ export default {
 			//upper-right corner -> upper left -> bottom left -> bottom right
 			//positive numbers represents light draughts, negative numbers represents dark
 			//desk: [2, 0, 0, 0, 0, -5, 0, -3, 0, 0, 0, 5, -5, 0, 0, 0, 3, 0, 5, 0, 0, 0, 0, -2],
-			desk: [-5, 0, -5, 0, 0, -5, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 5, 0, 5, 0, 5],
+			desk: [-1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
 			ifTurnOfLight: null, //true === light, false === darks
 			minRoll: 1,
 			maxRoll: 6,
@@ -134,10 +133,10 @@ export default {
 			],
 			indexOfSelectedDraught: null,
 			indexOfSelectedColumn: null,
-			deadLights: 0,
+			deadLights: 14,
 			deadDarks: 0,
 			lightsOut: 0,
-			darksOut: 0,
+			darksOut: 14,
 			modalVisible: true
 		};
 	},
@@ -462,6 +461,30 @@ export default {
 					}
 				}
 			}
+		},
+		score(winner) {
+			let ifOpponentHaventQuit; // checks if opponent havent quit yet
+			let ifWinnersHouseContainsOpponentsFigures; // checks if winner's player home contains opponent's draughts
+			let score;
+			if (winner === true) {
+				ifOpponentHaventQuit = this.darksOut === 0;
+				ifWinnersHouseContainsOpponentsFigures = () =>
+					this.lightHome.some((position) => position < 0) || this.deadDarks != 0;
+			} else {
+				ifOpponentHaventQuit = this.lightsOut === 0;
+				ifWinnersHouseContainsOpponentsFigures = () =>
+					this.darkHome.some((position) => position > 0) || this.deadLights != 0;
+			}
+			if (ifOpponentHaventQuit) {
+				if (ifWinnersHouseContainsOpponentsFigures()) {
+					score = 3;
+				} else {
+					score = 2;
+				}
+			} else {
+				score = 1;
+			}
+			this.$emit("won", { score: score, winner: winner });
 		}
 	},
 	watch: {
@@ -486,12 +509,12 @@ export default {
 		},
 		darksOut: function () {
 			if (this.darksOut === 15) {
-				this.$emit("won", false);
+				this.score(false);
 			}
 		},
 		lightsOut: function () {
 			if (this.lightsOut === 15) {
-				this.$emit("won", true);
+				this.score(true);
 			}
 		},
 		positionsAvailableForCurrentPlayer() {
@@ -499,6 +522,9 @@ export default {
 				this.theEndOfTurn();
 				this.begginingOfTheTurn();
 			}
+		},
+		firstTurnOf: function () {
+			this.begginingOfTheGame(this.firstTurnOf);
 		}
 	}
 };

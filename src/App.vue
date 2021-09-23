@@ -9,23 +9,39 @@
 			didn't like "long" version. Actually, long version is whole another game, and this game is really stupid
 		</p>
 	</header>
-	<game-desk @won="score" />
+	<section>
+		<game-desk @won="scoreOnEmit" :firstTurnOf="firstTurnOfIn" />
+	</section>
+	<modal-pick v-if="modalVisible" @firstTurnOf="begginingOfTheGame" />
 </template>
 
 <script>
 import GameDesk from "@/components/GameDesk.vue";
+import ModalPick from "@/components/ModalPick.vue";
+
 export default {
 	name: "App",
 	components: {
-		GameDesk
+		GameDesk,
+		ModalPick
+	},
+	data() {
+		return {
+			score: {
+				true: 0, //lights, it's name as bool because i can save lil memory like this
+				false: 0 //darks
+			},
+			firstTurnOfIn: null,
+			modalVisible: true
+		};
 	},
 	methods: {
-		score(value) {
-			if (value === true) {
-				console.log("light won");
-			} else {
-				console.log("dark won");
-			}
+		scoreOnEmit(value) {
+			this.score[value.winner] += value.score;
+		},
+		begginingOfTheGame(value) {
+			this.firstTurnOfIn = value;
+			this.modalVisible = false;
 		}
 	}
 };
