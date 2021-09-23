@@ -115,8 +115,7 @@ export default {
 			//contains position of all draughts
 			//upper-right corner -> upper left -> bottom left -> bottom right
 			//positive numbers represents light draughts, negative numbers represents dark
-			//desk: [2, 0, 0, 0, 0, -5, 0, -3, 0, 0, 0, 5, -5, 0, 0, 0, 3, 0, 5, 0, 0, 0, 0, -2],
-			desk: [-1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+			desk: [2, 0, 0, 0, 0, -5, 0, -3, 0, 0, 0, 5, -5, 0, 0, 0, 3, 0, 5, 0, 0, 0, 0, -2],
 			ifTurnOfLight: null, //true === light, false === darks
 			minRoll: 1,
 			maxRoll: 6,
@@ -133,10 +132,10 @@ export default {
 			],
 			indexOfSelectedDraught: null,
 			indexOfSelectedColumn: null,
-			deadLights: 14,
+			deadLights: 0,
 			deadDarks: 0,
 			lightsOut: 0,
-			darksOut: 14,
+			darksOut: 0,
 			modalVisible: true
 		};
 	},
@@ -485,6 +484,33 @@ export default {
 				score = 1;
 			}
 			this.$emit("won", { score: score, winner: winner });
+			this.resetToInitialState();
+		},
+		resetToInitialState() {
+			Object.assign(this.$data, {
+				desk: [2, 0, 0, 0, 0, -5, 0, -3, 0, 0, 0, 5, -5, 0, 0, 0, 3, 0, 5, 0, 0, 0, 0, -2],
+				ifTurnOfLight: null, //true === light, false === darks
+				minRoll: 1,
+				maxRoll: 6,
+				askedForRerroll: false,
+				rolls: [
+					{
+						value: 1,
+						used: false
+					},
+					{
+						value: 1,
+						used: false
+					}
+				],
+				indexOfSelectedDraught: null,
+				indexOfSelectedColumn: null,
+				deadLights: 0,
+				deadDarks: 0,
+				lightsOut: 0,
+				darksOut: 0,
+				modalVisible: true
+			});
 		}
 	},
 	watch: {
