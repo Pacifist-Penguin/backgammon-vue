@@ -43,6 +43,15 @@ export default {
 			this.firstTurnOfIn = value;
 			this.modalVisible = false;
 		}
+	},
+	watch: {
+		score: function () {
+			if (this.score.true >= 5) {
+				console.log("lights won!");
+			} else if (this.score.false >= 5) {
+				console.log("darks won!");
+			}
+		}
 	}
 };
 </script>
