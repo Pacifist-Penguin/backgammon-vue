@@ -1,6 +1,6 @@
 <template>
 	<modal-outer>
-		<div class="modalBody">
+		<div>
 			<h1>{{ text }}</h1>
 			<button ref="button" @click="firstGameRoll">Roll!</button>
 		</div>
@@ -59,14 +59,3 @@ export default {
 	}
 };
 </script>
-<style scoped>
-.modalBody {
-	margin-right: auto;
-	margin-left: auto;
-	text-align: center;
-	display: block;
-	height: 10vmin;
-	margin-top: calc(50% - 10vmin);
-	margin-bottom: calc(50% - 10vmin);
-}
-</style>
