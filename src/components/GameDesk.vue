@@ -94,7 +94,7 @@ import DraughtFigure from "@/components/DraughtFigure.vue";
 import RollingDice from "@/components/RollingDice.vue";
 // the following const is here only to improve DRY
 // IDK if it's any good practice for other reasons
-// but i dont think that repeating 122 lines of code is any ok
+// but i dont feel like repeating this lines of code
 const initalStates = () => {
 	return {
 		desk: [2, 0, 0, 0, 0, -5, 0, -3, 0, 0, 0, 5, -5, 0, 0, 0, 3, 0, 5, 0, 0, 0, 0, -2],
