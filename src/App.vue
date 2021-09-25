@@ -57,6 +57,7 @@ export default {
 			} else {
 				this.postGameModalVisible = true;
 			}
+			this.firstTurnOfIn = value;
 		},
 		hidePostGameModal() {
 			this.postGameModalVisible = false;
@@ -67,20 +68,6 @@ export default {
 		},
 		gameEnds() {
 			this.gameEnded = true;
-		}
-	},
-	watch: {
-		score: function () {
-			if (this.score.true >= 5) {
-				console.log("lights won!");
-				this.winner = "lights";
-				this.gameEnds();
-			} else if (this.score.false >= 5) {
-				this.winner = "darks";
-				this.gameEnds();
-			} else {
-				this.postGameModalVisible = true;
-			}
 		}
 	}
 };
