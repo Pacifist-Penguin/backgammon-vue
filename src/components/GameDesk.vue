@@ -92,6 +92,35 @@
 import DeskColumn from "@/components/DeskColumn.vue";
 import DraughtFigure from "@/components/DraughtFigure.vue";
 import RollingDice from "@/components/RollingDice.vue";
+// the following const is here only to improve DRY
+// IDK if it's any good practice for other reasons
+// but i dont feel like repeating this lines of code
+const initalStates = () => {
+	return {
+		desk: [2, 0, 0, 0, 0, -5, 0, -3, 0, 0, 0, 5, -5, 0, 0, 0, 3, 0, 5, 0, 0, 0, 0, -2],
+		ifTurnOfLight: null, //true === light, false === darks
+		minRoll: 1,
+		maxRoll: 6,
+		askedForRerroll: false,
+		rolls: [
+			{
+				value: 1,
+				used: false
+			},
+			{
+				value: 1,
+				used: false
+			}
+		],
+		indexOfSelectedDraught: null,
+		indexOfSelectedColumn: null,
+		deadLights: 0,
+		deadDarks: 0,
+		lightsOut: 0,
+		darksOut: 0,
+		modalVisible: true
+	};
+};
 
 export default {
 	name: "GameDesk",
@@ -110,35 +139,10 @@ export default {
 			required: true
 		}
 	},
-	data() {
-		return {
-			//contains position of all draughts
-			//upper-right corner -> upper left -> bottom left -> bottom right
-			//positive numbers represents light draughts, negative numbers represents dark
-			desk: [2, 0, 0, 0, 0, -5, 0, -3, 0, 0, 0, 5, -5, 0, 0, 0, 3, 0, 5, 0, 0, 0, 0, -2],
-			ifTurnOfLight: null, //true === light, false === darks
-			minRoll: 1,
-			maxRoll: 6,
-			askedForRerroll: false,
-			rolls: [
-				{
-					value: 1,
-					used: false
-				},
-				{
-					value: 1,
-					used: false
-				}
-			],
-			indexOfSelectedDraught: null,
-			indexOfSelectedColumn: null,
-			deadLights: 0,
-			deadDarks: 0,
-			lightsOut: 0,
-			darksOut: 0,
-			modalVisible: true
-		};
+	created() {
+		this.beginningOfTheGame(this.firstTurnOf);
 	},
+	data: initalStates,
 	computed: {
 		firstRow() {
 			return this.desk.slice(0, 12); //it's reversed in CSS
@@ -162,11 +166,7 @@ export default {
 			return this.desk.reduce((arr, el, index) => (el <= -1 && arr.push(index), arr), []);
 		},
 		indexesOfCurrentPlayer() {
-			return this.ifTurnOfLight
-				? this.indexesOfAllLights
-				: this.ifTurnOfLight === false
-				? this.indexesOfAllDarks
-				: null;
+			return this.ifTurnOfLight ? this.indexesOfAllLights : this.indexesOfAllDarks;
 		},
 		ifAllFiguresOfCurrentPlayerIsInHome() {
 			const reducer = (previousValue, currentValue) => previousValue + currentValue;
@@ -316,34 +316,7 @@ export default {
 	},
 	methods: {
 		setToInitialState() {
-			Object.assign(this.$data, {
-				//contains position of all draughts
-				//upper-right corner -> upper left -> bottom left -> bottom right
-				//positive numbers represents light draughts, negative numbers represents dark
-
-				desk: [2, 0, 0, 0, 0, -5, 0, -3, 0, 0, 0, 5, -5, 0, 0, 0, 3, 0, 5, 0, 0, 0, 0, -2],
-				ifTurnOfLight: null, //true === light, false === darks
-				minRoll: 1,
-				maxRoll: 6,
-				askedForRerroll: false,
-				rolls: [
-					{
-						value: 1,
-						used: false
-					},
-					{
-						value: 1,
-						used: false
-					}
-				],
-				indexOfSelectedDraught: null,
-				indexOfSelectedColumn: null,
-				deadLights: 0,
-				deadDarks: 0,
-				lightsOut: 0,
-				darksOut: 0,
-				modalVisible: true
-			});
+			Object.assign(this.$data, initalStates());
 		},
 		roll() {
 			const action = Math.floor(Math.random() * (this.maxRoll - this.minRoll) + 1);
@@ -354,12 +327,12 @@ export default {
 				//Or if it's turn of dark
 			}
 		},
-		begginingOfTheGame(value) {
+		beginningOfTheGame(value) {
 			this.ifTurnOfLight = value;
 			this.modalVisible = false;
-			this.begginingOfTheTurn();
+			this.beginningOfTheTurn();
 		},
-		begginingOfTheTurn() {
+		beginningOfTheTurn() {
 			let firstRoll = this.roll();
 			let secondRoll = this.roll();
 			this.rolls = [
@@ -455,39 +428,37 @@ export default {
 			}
 		},
 		getOut() {
-			if (this.ifAllFiguresOfCurrentPlayerIsInHome && this.ifSelectedDraughtIsDraughtOfCurrentPlayer) {
-				if (this.ifTurnOfLight) {
-					let useThisRoll;
-					if (this.waysToGetOutForSelectedDraught.length > 0) {
-						useThisRoll = this.waysToGetOutForSelectedDraught[0];
-						this.desk[this.indexOfSelectedDraught]--;
-						this.lightsOut++;
-						this.useRoll(useThisRoll.value);
-					} else if (
-						this.ifCurrentlySelectedDraughtIsHighestInItsHome &&
-						this.validValuesToGetOutIfSelectedDraughtHaveHighestIndex.length > 0
-					) {
-						useThisRoll = this.validValuesToGetOutIfSelectedDraughtHaveHighestIndex[0];
-						this.desk[this.indexOfSelectedDraught]--;
-						this.lightsOut++;
-						this.useRoll(useThisRoll.value);
-					}
-				} else {
-					let useThisRoll;
-					if (this.waysToGetOutForSelectedDraught.length > 0) {
-						useThisRoll = this.localIndexOfSelectedDraught;
-						this.darksOut++;
-						this.desk[this.indexOfSelectedDraught]++;
-						this.useRoll(useThisRoll);
-					} else if (
-						this.ifCurrentlySelectedDraughtIsHighestInItsHome &&
-						this.validValuesToGetOutIfSelectedDraughtHaveHighestIndex.length > 0
-					) {
-						useThisRoll = this.validValuesToGetOutIfSelectedDraughtHaveHighestIndex[0];
-						this.darksOut++;
-						this.desk[this.indexOfSelectedDraught]++;
-						this.useRoll(useThisRoll.value);
-					}
+			if (this.ifTurnOfLight) {
+				let useThisRoll;
+				if (this.waysToGetOutForSelectedDraught.length > 0) {
+					useThisRoll = this.waysToGetOutForSelectedDraught[0];
+					this.desk[this.indexOfSelectedDraught]--;
+					this.lightsOut++;
+					this.useRoll(useThisRoll.value);
+				} else if (
+					this.ifCurrentlySelectedDraughtIsHighestInItsHome &&
+					this.validValuesToGetOutIfSelectedDraughtHaveHighestIndex.length > 0
+				) {
+					useThisRoll = this.validValuesToGetOutIfSelectedDraughtHaveHighestIndex[0];
+					this.desk[this.indexOfSelectedDraught]--;
+					this.lightsOut++;
+					this.useRoll(useThisRoll.value);
+				}
+			} else {
+				let useThisRoll;
+				if (this.waysToGetOutForSelectedDraught.length > 0) {
+					useThisRoll = this.localIndexOfSelectedDraught;
+					this.darksOut++;
+					this.desk[this.indexOfSelectedDraught]++;
+					this.useRoll(useThisRoll);
+				} else if (
+					this.ifCurrentlySelectedDraughtIsHighestInItsHome &&
+					this.validValuesToGetOutIfSelectedDraughtHaveHighestIndex.length > 0
+				) {
+					useThisRoll = this.validValuesToGetOutIfSelectedDraughtHaveHighestIndex[0];
+					this.darksOut++;
+					this.desk[this.indexOfSelectedDraught]++;
+					this.useRoll(useThisRoll.value);
 				}
 			}
 		},
@@ -521,20 +492,20 @@ export default {
 		leftTurns: function () {
 			if (this.leftTurns.length === 0) {
 				this.theEndOfTurn();
-				this.begginingOfTheTurn();
+				this.beginningOfTheTurn();
 			}
 		},
 		possibleToGetIn: function () {
 			if (this.needToGetIn && !this.possibleToGetIn) {
 				console.log("not possible to get in");
 				this.theEndOfTurn();
-				this.begginingOfTheTurn();
+				this.beginningOfTheTurn();
 			}
 		},
 		canGetIn: function () {
 			if (this.needToGetIn && this.canGetIn.length === 0) {
 				this.theEndOfTurn();
-				this.begginingOfTheTurn();
+				this.beginningOfTheTurn();
 			}
 		},
 		darksOut: function () {
@@ -550,11 +521,8 @@ export default {
 		positionsAvailableForCurrentPlayer() {
 			if (this.positionsAvailableForCurrentPlayer.length === 0 && !this.ifAllFiguresOfCurrentPlayerIsInHome) {
 				this.theEndOfTurn();
-				this.begginingOfTheTurn();
+				this.beginningOfTheTurn();
 			}
-		},
-		firstTurnOf: function () {
-			this.begginingOfTheGame(this.firstTurnOf);
 		}
 	}
 };
