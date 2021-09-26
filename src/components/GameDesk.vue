@@ -240,6 +240,11 @@ export default {
 		possibleToGetIn() {
 			return this.ifTurnOfLight ? this.darkHome.some((el) => el >= -1) : this.lightHome.some((el) => el <= 1);
 		},
+		ifSelectedColumnOccupiedByOnlyOneDraught() {
+			return this.ifTurnOfLight
+				? this.desk[this.indexOfSelectedColumn] === -1
+				: this.desk[this.indexOfSelectedColumn] === 1;
+		},
 		canGetInLightHome() {
 			const positions = [];
 			const arr = this.lightHome;
@@ -320,7 +325,7 @@ export default {
 		},
 		roll() {
 			const action = Math.floor(Math.random() * (this.maxRoll - this.minRoll) + 1);
-			if (this.ifTurnOfLight === true || this.ifTurnOfLight === null) {
+			if (this.ifTurnOfLight) {
 				return action; //returns positive because we need to equate positive numbeers in first roll.
 			} else {
 				return -action; //returns negative because it's needed for darks going in opposite direction
@@ -369,23 +374,30 @@ export default {
 				this.moveDraught();
 			}
 		},
+		hitOpponentsDraught() {
+			if (this.ifTurnOfLight) {
+				this.desk[this.indexOfSelectedColumn]++;
+				this.deadDarks++;
+			} else {
+				this.desk[this.indexOfSelectedColumn]--;
+				this.deadLights++;
+			}
+		},
+		relocateDraught() {
+			if (this.ifTurnOfLight) {
+				this.desk[this.indexOfSelectedDraught]--;
+				this.desk[this.indexOfSelectedColumn]++;
+			} else {
+				this.desk[this.indexOfSelectedDraught]++;
+				this.desk[this.indexOfSelectedColumn]--;
+			}
+		},
 		moveDraught() {
 			if (this.positionsAvailableForSelectedDraught.includes(this.indexOfSelectedColumn)) {
-				if (this.ifTurnOfLight) {
-					if (this.desk[this.indexOfSelectedColumn] === -1) {
-						this.desk[this.indexOfSelectedColumn]++;
-						this.deadDarks++;
-					}
-					this.desk[this.indexOfSelectedDraught]--;
-					this.desk[this.indexOfSelectedColumn]++;
-				} else {
-					if (this.desk[this.indexOfSelectedColumn] === 1) {
-						this.desk[this.indexOfSelectedColumn]--;
-						this.deadLights++;
-					}
-					this.desk[this.indexOfSelectedDraught]++;
-					this.desk[this.indexOfSelectedColumn]--;
+				if (this.ifSelectedColumnOccupiedByOnlyOneDraught) {
+					this.hitOpponentsDraught();
 				}
+				this.relocateDraught();
 				this.useRoll(this.indexOfSelectedColumn - this.indexOfSelectedDraught);
 			}
 		},
@@ -397,39 +409,31 @@ export default {
 		},
 		ressurect() {
 			if (this.canGetIn.length > 0) {
-				const moveDistance = this.indexOfSelectedDraught - this.indexOfSelectedColumn;
-				if (this.ifTurnOfLight) {
-					console.log(this.canGetIn.includes(Math.abs(moveDistance)));
-					if (this.canGetIn.includes(Math.abs(moveDistance))) {
-						if (this.desk[this.indexOfSelectedColumn] === -1) {
-							this.desk[this.indexOfSelectedColumn]++;
-							this.deadDarks++;
-						}
+				const moveDistance = Math.abs(this.indexOfSelectedDraught - this.indexOfSelectedColumn);
+				if (this.canGetIn.includes(moveDistance)) {
+					if (this.ifSelectedColumnOccupiedByOnlyOneDraught) {
+						this.hitOpponentsDraught();
+					}
+					if (this.ifTurnOfLight) {
 						this.desk[this.indexOfSelectedColumn]++;
 						this.deadLights--;
 						this.useRoll(this.indexOfSelectedColumn + 1);
-					}
-					//it's + 1 because every dead figure is like on 'start' of the game
-					//and darks starts at 0, but to get here u have to roll at least 1
-				} else {
-					if (this.canGetIn.includes(Math.abs(moveDistance))) {
-						if (this.desk[this.indexOfSelectedColumn] === 1) {
-							this.desk[this.indexOfSelectedColumn]--;
-							this.deadLights++;
-						}
+					} else {
 						this.desk[this.indexOfSelectedColumn]--;
 						this.deadDarks--;
 						this.useRoll(this.indexOfSelectedColumn - 24);
 					}
-					//24 is length of desk
-					//example: dark figure starts at desk[23], 23-24 = -1
-					//since there is Math.abs(), it returns 1, so our useRoll is looking for unused roll with value === 1
 				}
+				//it's + 1 because every dead figure is like on 'start' of the game
+				//and darks starts at 0, but to get here u have to roll at least 1
+				//24 is length of desk
+				//example: dark figure starts at desk[23], 23-24 = -1
+				//since there is Math.abs(), it returns 1, so our useRoll is looking for unused roll with value === 1
 			}
 		},
 		getOut() {
+			let useThisRoll;
 			if (this.ifTurnOfLight) {
-				let useThisRoll;
 				if (this.waysToGetOutForSelectedDraught.length > 0) {
 					useThisRoll = this.waysToGetOutForSelectedDraught[0];
 					this.desk[this.indexOfSelectedDraught]--;
@@ -445,11 +449,10 @@ export default {
 					this.useRoll(useThisRoll.value);
 				}
 			} else {
-				let useThisRoll;
 				if (this.waysToGetOutForSelectedDraught.length > 0) {
 					useThisRoll = this.localIndexOfSelectedDraught;
-					this.darksOut++;
 					this.desk[this.indexOfSelectedDraught]++;
+					this.darksOut++;
 					this.useRoll(useThisRoll);
 				} else if (
 					this.ifCurrentlySelectedDraughtIsHighestInItsHome &&
