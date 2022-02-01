@@ -1,5 +1,5 @@
 <template>
-	<img :src="imagesUrl" />
+	<img class="dice" :src="imagesUrl" />
 </template>
 
 <script>
@@ -18,3 +18,9 @@ export default {
 	}
 };
 </script>
+
+<style scoped>
+.dice {
+	height: 20vh;
+}
+</style>

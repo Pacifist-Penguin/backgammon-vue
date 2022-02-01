@@ -1,30 +1,24 @@
 <template>
-	<div class="center modalOuter">
-		<div class="modalBody">
+	<div class="modal-backdrop">
+		<div class="modal-body">
 			<slot></slot>
 		</div>
 	</div>
 </template>
 
 <style scoped>
-.center {
-	position: absolute;
-	top: 50%;
-	left: 50%;
-	transform: translate(-50%, -50%);
+.modal-backdrop {
+	position: fixed;
+	top: 0;
+	bottom: 0;
+	left: 0;
+	right: 0;
+	background-color: rgba(0, 0, 0, 0.3);
+	display: flex;
+	justify-content: center;
+	align-items: center;
 }
-.modalOuter {
-	width: 100vw;
-	height: 100vh;
-	background-color: rgba(255, 255, 255, 0.7);
-}
-.modalBody {
-	margin-right: auto;
-	margin-left: auto;
+.modal-body {
 	text-align: center;
-	display: block;
-	height: 10vmin;
-	margin-top: calc(50% - 10vmin);
-	margin-bottom: calc(50% - 10vmin);
 }
 </style>

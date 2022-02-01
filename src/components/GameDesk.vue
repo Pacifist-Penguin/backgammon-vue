@@ -1,8 +1,26 @@
 <template>
 	<div>
 		<h1 v-show="ifTurnOfLight != null">{{ ifTurnOfLight ? "Lights" : "Darks" }}</h1>
-		{{ indexOfSelectedDraught }} {{ indexOfSelectedColumn }}
-		<div>
+		<div class="desk-n-leaved-figures">
+			<!-- draughtNumber is hardcoded only to spawn draught of proper color -->
+			<div class="dead-figures">
+				<draught-figure
+					@selected="selectDeadDraught"
+					v-for="(items, index) in deadLights"
+					:key="index"
+					:draughtNumber="1"
+					:indexOfColumnOnDesk="index"
+				/>
+			</div>
+			<div class="dead-figures">
+				<draught-figure
+					@selected="selectDeadDraught"
+					v-for="(items, index) in deadDarks"
+					:key="index"
+					:draughtNumber="-1"
+					:indexOfColumnOnDesk="index"
+				/>
+			</div>
 			<div class="desk">
 				<div class="rowContainer">
 					<div class="firstRow">
@@ -39,12 +57,6 @@
 					</div>
 				</div>
 			</div>
-			<h1>
-				<span v-for="(items, index) in leftTurns" :key="index">
-					<rolling-dice :roll="leftTurns[index].value" />
-				</span>
-			</h1>
-			<h1>Turns left: {{ leftTurns.length }}</h1>
 			<div @click="getOut" class="light leavedFigures">
 				<draught-figure
 					@selected="selectDeadDraught"
@@ -64,26 +76,9 @@
 				/>
 			</div>
 		</div>
-		<div class="dead-figures">
-			<ul class="light-figures">
-				<draught-figure
-					@selected="selectDeadDraught"
-					v-for="(items, index) in deadLights"
-					:key="index"
-					:draughtNumber="1"
-					:indexOfColumnOnDesk="index"
-				/>
-			</ul>
-			<ul class="dark-figures">
-				<draught-figure
-					@selected="selectDeadDraught"
-					v-for="(items, index) in deadDarks"
-					:key="index"
-					:draughtNumber="-1"
-					:indexOfColumnOnDesk="index"
-				/>
-				<!-- draughtNumber set only to make it proper color -->
-			</ul>
+
+		<div>
+			<rolling-dice v-for="(items, index) in leftTurns" :key="index" :roll="leftTurns[index].value" />
 		</div>
 	</div>
 </template>
@@ -533,18 +528,18 @@ export default {
 
 <style scoped>
 .desk {
-	background-color: brown;
+	background-color: var(--desk-color);
 	display: inline-block;
-	border: solid 1vmin brown;
+	border: solid 1vmin var(--desk-color);
 }
 .firstRow {
 	display: flex;
 	flex-direction: row-reverse;
-	height: 300px;
+	height: 35vh;
 }
 .secondRow {
 	display: flex;
-	height: 300px;
+	height: 35vh;
 }
 .secondRow > * > * {
 	display: flex;
@@ -553,9 +548,20 @@ export default {
 .rowContainer {
 	display: flex;
 }
+.desk-n-leaved-figures {
+	display: flex;
+}
+.leavedFigures,
+.dead-figures {
+	min-height: 1rem;
+	min-width: 1.6rem;
+	border: 1px solid var(--border-color);
+	display: flex;
+	background-color: var(--dead-draught-zone-color);
+	flex-direction: column;
+}
 .leavedFigures {
-	min-height: 10px;
-	background-color: yellow;
-	border: 1px solid blue;
+	background-color: var(--exit-color);
+	border: 1px solid var(--border-color);
 }
 </style>

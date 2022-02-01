@@ -1,7 +1,7 @@
 <template>
 	<svg
 		@click.stop="selectDraught"
-		style="width: 25px"
+		class="draught"
 		viewBox="0 0 120 120"
 		version="1.1"
 		xmlns="http://www.w3.org/2000/svg"
@@ -27,7 +27,7 @@ export default {
 	},
 	computed: {
 		draughtColor() {
-			return this.draughtNumber > 0 ? "red" : "black";
+			return this.draughtNumber > 0 ? "var(--light-draught-color)" : "var(--dark-draught-color)";
 		}
 	},
 	methods: {
@@ -37,3 +37,9 @@ export default {
 	}
 };
 </script>
+
+<style scoped>
+.draught {
+	width: 1.5rem;
+}
+</style>

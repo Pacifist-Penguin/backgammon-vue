@@ -1,25 +1,26 @@
 <template>
 	<header>
-		<audio controls loop autoplay>
-			<source src="@/assets/sound/music.ogg" />
-		</audio>
 		<h1>Backgammon</h1>
 		<p>
 			As you may guess, it's game called "backgammon". It's widely popular on east. It's "short" version because i
 			didn't like "long" version. Actually, long version is whole another game, and this game is really stupid
 		</p>
 	</header>
-	<section>
+	<main>
 		<game-desk v-if="firstTurnOfIn != null" @won="scoreOnEmit" :firstTurnOf="firstTurnOfIn" />
-	</section>
-	<modal-pick v-if="modalVisible" @firstTurnOf="begginingOfTheGame" />
-	<modal-post-game
-		v-if="postGameModalVisible"
-		:lightsScore="score.true"
-		:darksScore="score.false"
-		@hide-me="hidePostGameModal"
-	/>
-	<modal-match-end v-if="gameEnded" :winner="winner" />
+		<modal-pick v-if="modalVisible" @firstTurnOf="begginingOfTheGame" />
+		<modal-post-game
+			v-if="postGameModalVisible"
+			:lightsScore="score.true"
+			:darksScore="score.false"
+			@hide-me="hidePostGameModal"
+		/>
+		<modal-match-end v-if="gameEnded" :winner="winner" />
+	</main>
+	<footer>
+		Just a simple project to get a grasp of Vue.
+		<a href="https://github.com/NewPirateOfUASeas/backgammon-vue">Source code</a>
+	</footer>
 </template>
 
 <script>
@@ -74,17 +75,26 @@ export default {
 </script>
 
 <style>
+:root {
+	--background-color: #fff;
+	--desk-color: #a52a2a;
+	--dark-draught-color: #000;
+	--light-draught-color: #ff0000;
+	--dead-draught-zone-color: #f5f5dc;
+	--exit-color: #ffff00;
+	--border-color: #0000ff;
+	--1st-column-color: #0000ff;
+	--2nd-column-color: #bf3eff;
+}
+
 html {
-	background-image: url("./assets/images/shashlyk.gif");
-	background-repeat: no-repeat;
-	background-size: cover;
-	background-position: center;
+	font-size: 16px;
 	font-family: sans-serif;
+	background-color: var(--background-color);
 }
 body {
-	background-color: rgba(255, 255, 255, 0.6);
-	width: 100vw;
-	height: 100vh;
-	margin: 0px;
+	margin: 0 auto;
+	width: min(50rem, 90%);
+	align-content: center;
 }
 </style>

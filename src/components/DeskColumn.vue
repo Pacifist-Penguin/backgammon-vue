@@ -28,7 +28,7 @@ export default {
 			return Math.abs(this.draughtNumber);
 		},
 		computedStyle() {
-			return this.indexOfColumnOnDesk % 2 === 0 ? "#0000FF" : "#BF3EFF";
+			return this.indexOfColumnOnDesk % 2 === 0 ? "var(--1st-column-color)" : "var(--2nd-column-color)";
 		},
 		computedClass() {
 			return { marginRight: this.indexOfColumnOnDesk === 6 || this.indexOfColumnOnDesk === 17 };
@@ -48,9 +48,9 @@ export default {
 	height: 100%;
 	list-style: none;
 	margin: 0;
-	width: 50px;
+	width: max(1.6rem, 3.8vw);
 }
 .marginRight {
-	margin-right: 5px;
+	margin-right: 0.5rem;
 }
 </style>
