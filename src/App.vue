@@ -78,13 +78,13 @@ export default {
 :root {
 	--background-color: #fff;
 	--desk-color: #a52a2a;
-	--dark-draught-color: #000;
-	--light-draught-color: #ff0000;
+	--dark-draught-color: #3f2121;
+	--light-draught-color: #cf9832;
 	--dead-draught-zone-color: #f5f5dc;
 	--exit-color: #ffff00;
 	--border-color: #0000ff;
-	--1st-column-color: #0000ff;
-	--2nd-column-color: #bf3eff;
+	--1st-column-color: #dbdbb8;
+	--2nd-column-color: #944343;
 }
 
 html {
