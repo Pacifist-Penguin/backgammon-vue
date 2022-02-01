@@ -547,6 +547,7 @@ export default {
 }
 .rowContainer {
 	display: flex;
+	max-width: 90vw;
 }
 .desk-n-leaved-figures {
 	display: flex;

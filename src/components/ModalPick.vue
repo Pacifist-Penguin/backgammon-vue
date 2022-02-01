@@ -2,7 +2,7 @@
 	<modal-outer>
 		<div>
 			<h1>{{ text }}</h1>
-			<button ref="button" @click="firstGameRoll">Roll!</button>
+			<button class="button" ref="button" @click="firstGameRoll">Roll!</button>
 		</div>
 	</modal-outer>
 </template>
@@ -59,3 +59,12 @@ export default {
 	}
 };
 </script>
+
+<style scoped>
+.button {
+	margin-top: 1rem;
+	height: 3rem;
+	width: 10rem;
+	border-radius: 1vmin;
+}
+</style>

@@ -95,6 +95,15 @@ html {
 body {
 	margin: 0 auto;
 	width: min(50rem, 90%);
-	align-content: center;
+}
+@media screen and (max-width: 768px) {
+	body {
+		margin: 0 0 0 0;
+		width: 100vw;
+	}
+	h1,
+	p {
+		margin: 0 auto;
+	}
 }
 </style>
